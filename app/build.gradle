@@ -18,8 +18,6 @@ android {
         targetSdkVersion 23
         versionCode 1
         versionName "1.0"
-        renderscriptTargetApi 23
-        renderscriptSupportModeEnabled true
     }
     buildTypes {
         release {
@@ -49,7 +47,7 @@ dependencies {
 
     compile 'net.steamcrafted:materialiconlib:1.0.7'
 
-    compile 'jp.wasabeef:blurry:1.0.5'
+    compile 'com.commit451:NativeStackBlur:1.0.2'
 
     compile 'com.squareup.retrofit:retrofit:2.0.0-beta2'
     compile 'com.squareup.retrofit:adapter-rxjava:2.0.0-beta2'

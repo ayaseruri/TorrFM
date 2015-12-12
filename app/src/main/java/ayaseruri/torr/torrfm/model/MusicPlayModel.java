@@ -15,6 +15,7 @@ public class MusicPlayModel {
     private int musicTimeTotal;
     private int musicTimeCurrent;
     private int musicIndexCurrent;
+    private int musicBufferPercent;
     private boolean isMusicPlaying;
 
     public MusicPlayModel() {
@@ -22,6 +23,7 @@ public class MusicPlayModel {
         musicIndexCurrent = 0;
         musicTimeCurrent = 0;
         musicTimeTotal = 0;
+        isMusicPlaying = false;
     }
 
     public List<SongInfo> getSongInfos() {
@@ -59,13 +61,13 @@ public class MusicPlayModel {
         return musicIndexCurrent;
     }
 
-    public void setMusicIndexCurrent(int musicIndexCurrent) {
-        if(musicIndexCurrent < 0){
+    public void setMusicIndexCurrent(int indexCurrent) {
+        if(indexCurrent < 0){
             musicIndexCurrent = songInfos.size() - 1;
-        }else if(musicIndexCurrent > songInfos.size()){
+        }else if(indexCurrent >= songInfos.size()){
             musicIndexCurrent = 0;
         }else {
-            this.musicIndexCurrent = musicIndexCurrent;
+            this.musicIndexCurrent = indexCurrent;
         }
         update();
     }
@@ -81,6 +83,15 @@ public class MusicPlayModel {
 
     public SongInfo getMusicInfoCurrent() {
         return songInfos.get(musicIndexCurrent);
+    }
+
+    public int getMusicBufferPercent() {
+        return musicBufferPercent;
+    }
+
+    public void setMusicBufferPercent(int musicBufferPercent) {
+        this.musicBufferPercent = musicBufferPercent;
+        update();
     }
 
     private void update(){

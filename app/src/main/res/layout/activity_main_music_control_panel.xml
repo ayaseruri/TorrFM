@@ -10,25 +10,35 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        android:layout_gravity="center_vertical">
+        android:paddingLeft="16dp"
+        android:paddingRight="16dp">
         <TextView
             android:id="@+id/music_current_time"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="00:00"/>
+            android:text="00:00"
+            android:layout_centerVertical="true"
+            android:textColor="@color/white"/>
 
-        <SeekBar
+        <ayaseruri.torr.torrfm.view.MSeekBar
             android:id="@+id/music_progress"
             android:layout_toRightOf="@+id/music_current_time"
             android:layout_toLeftOf="@+id/music_total_time"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content" />
+            android:layout_height="wrap_content"
+            android:maxHeight="2dip"
+            android:minHeight="2dip"
+            android:progressDrawable="@drawable/music_progress_bar_bg"
+            android:thumb="@drawable/music_progress_bar_thumb"
+            android:layout_centerVertical="true"/>
 
         <TextView
             android:id="@+id/music_total_time"
             android:layout_alignParentRight="true"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_centerVertical="true"
+            android:textColor="@color/white"
             android:text="00:00"/>
     </RelativeLayout>
 

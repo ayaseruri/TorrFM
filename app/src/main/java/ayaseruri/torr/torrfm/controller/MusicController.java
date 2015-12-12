@@ -8,6 +8,8 @@ import com.github.johnpersano.supertoasts.SuperToast;
 import com.github.johnpersano.supertoasts.util.Style;
 
 import java.io.IOException;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import ayaseruri.torr.torrfm.model.MusicPlayModel;
 
@@ -18,8 +20,9 @@ public class MusicController implements MediaPlayer.OnBufferingUpdateListener, M
     private Context mContext;
     private MediaPlayer mediaPlayer;
     private MusicPlayModel musicPlayModel;
+    private Timer mTimer;
 
-    public MusicController(Context context, MusicPlayModel musicPlayModel) {
+    public MusicController(Context context, final MusicPlayModel musicPlayModel) {
         this.musicPlayModel = musicPlayModel;
         this.mContext = context;
 
@@ -28,9 +31,24 @@ public class MusicController implements MediaPlayer.OnBufferingUpdateListener, M
         mediaPlayer.setOnBufferingUpdateListener(this);
         mediaPlayer.setOnPreparedListener(this);
         mediaPlayer.setOnCompletionListener(this);
+
+        mTimer = new Timer();
+        mTimer.schedule(new TimerTask() {
+            @Override
+            public void run() {
+                if(mediaPlayer.isPlaying()){
+                    musicPlayModel.setMusicTimeCurrent(mediaPlayer.getCurrentPosition());
+                }
+            }
+        }, 0, 1000);
     }
 
     public void play(){
+        musicPlayModel.setIsMusicPlaying(true);
+        mediaPlayer.start();
+    }
+
+    public void preparePlay(){
         if(null != musicPlayModel.getMusicInfoCurrent().getUrl()){
             try {
                 mediaPlayer.reset();
@@ -52,6 +70,8 @@ public class MusicController implements MediaPlayer.OnBufferingUpdateListener, M
 
     public void pre(){
         musicPlayModel.setMusicIndexCurrent(musicPlayModel.getMusicIndexCurrent() - 1);
+        preparePlay();
+
         if(musicPlayModel.isMusicPlaying()){
             play();
         }else {
@@ -61,6 +81,8 @@ public class MusicController implements MediaPlayer.OnBufferingUpdateListener, M
 
     public void next(){
         musicPlayModel.setMusicIndexCurrent(musicPlayModel.getMusicIndexCurrent() + 1);
+        preparePlay();
+
         if(musicPlayModel.isMusicPlaying()){
             play();
         }else {
@@ -68,17 +90,23 @@ public class MusicController implements MediaPlayer.OnBufferingUpdateListener, M
         }
     }
 
+    public void seekTo(int postion){
+        mediaPlayer.seekTo(postion/100 * musicPlayModel.getMusicTimeTotal());
+        musicPlayModel.setMusicTimeCurrent(postion);
+    }
+
     @Override
     public void onBufferingUpdate(MediaPlayer mp, int percent) {
-
+        musicPlayModel.setMusicBufferPercent(percent);
     }
 
     @Override
     public void onPrepared(MediaPlayer mp) {
-        if(!mp.isPlaying()){
-            mp.start();
-            musicPlayModel.setIsMusicPlaying(true);
+        musicPlayModel.setMusicTimeTotal(mp.getDuration());
+        if(musicPlayModel.isMusicPlaying()){
+            play();
         }
+        //为什么这里直接调用pause方法会直接触发media.onCompletion
     }
 
     @Override
