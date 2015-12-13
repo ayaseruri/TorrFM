@@ -1,11 +1,14 @@
 package ayaseruri.torr.torrfm.activity;
 
 import android.app.Dialog;
+import android.app.NotificationManager;
 import android.graphics.Bitmap;
 import android.net.Uri;
+import android.os.Environment;
 import android.support.v4.view.ViewPager;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.app.NotificationCompat;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
@@ -72,11 +75,14 @@ import rx.schedulers.Schedulers;
 
 @EActivity(R.layout.activity_main)
 public class MainActivity extends AppCompatActivity implements MusicPlayModel.IMusicPlay, LrcModel.ILrc {
+    private static final int DOWNLOAD_NOTIFICATION_ID = 0;
+
     private MusicPlayModel musicPlayModel;
     private MusicController musicController;
     private LrcModel mLrcModel;
     private int musicCoverPanelHeight = 0;
     private SimpleDraweeView musicCover;
+    private NotificationManager mNotifyMgr;
 
     @ViewById
     Toolbar toolbar;
@@ -103,6 +109,8 @@ public class MainActivity extends AppCompatActivity implements MusicPlayModel.IM
     void init(){
         setSupportActionBar(toolbar);
         initDrawer();
+        mNotifyMgr = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+
         musicPlayModel = new MusicPlayModel();
         musicPlayModel.addIMusicPlays(this);
         musicController = new MusicController(this, musicPlayModel);
@@ -191,6 +199,24 @@ public class MainActivity extends AppCompatActivity implements MusicPlayModel.IM
             lp.height = LocalDisplay.SCREEN_HEIGHT_PIXELS/2;
             lp.gravity = Gravity.BOTTOM;
             musicListDialog.getWindow().setAttributes(lp);
+        }
+    }
+
+    @Click(R.id.music_download)
+    void onMusicDownLoadClick(){
+        String sdStatus = Environment.getExternalStorageState();
+        if (sdStatus.equals(Environment.MEDIA_MOUNTED) || sdStatus.equals(Environment.MEDIA_SHARED)) {
+            String savePath = Environment.getExternalStorageDirectory().getAbsolutePath() + "/TorrFM/music/";
+            File saveDir = new File(savePath);
+            if (!saveDir.exists()) {
+                saveDir.mkdirs();
+            }
+            downloadMusic(musicPlayModel.getMusicInfoCurrent().getSrc()
+                    , musicPlayModel.getMusicInfoCurrent().getTitle()
+                    , savePath);
+        }else {
+            SuperToast.create(this, "手机存储似乎暂时无法使用", SuperToast.Duration.LONG
+                    , Style.getStyle(Style.RED, SuperToast.Animations.FADE)).show();
         }
     }
 
@@ -312,28 +338,33 @@ public class MainActivity extends AppCompatActivity implements MusicPlayModel.IM
     }
 
     public void downloadMusic(final String url, final String fileName, final String savePath){
-        Observable<Long> observable = Observable.create(new Observable.OnSubscribe<Long>() {
+        final NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(MainActivity.this);
+
+        Observable<Integer> observable = Observable.create(new Observable.OnSubscribe<Integer>() {
             @Override
-            public void call(Subscriber<? super Long> subscriber) {
+            public void call(Subscriber<? super Integer> subscriber) {
                 Request request = new Request.Builder().url(url).build();
                 try {
                     Response response = RetrofitClient.okHttpClient.newCall(request).execute();
                     if(response.isSuccessful()){
                         String mimeType = MimeTypeMap.getFileExtensionFromUrl(url);
-                        File file = new File(savePath + "/" + fileName + "." + mimeType);
-                        BufferedSink output = Okio.buffer(Okio.sink(file));
+                        File musicFile = new File(savePath + fileName + "." + mimeType);
+                        if(!musicFile.exists()){
+                            musicFile.createNewFile();
+                        }
+                        BufferedSink output = Okio.buffer(Okio.sink(musicFile));
 
                         BufferedSource input = Okio.buffer(Okio.source(response.body().byteStream()));
                         long totalByteLength = response.body().contentLength();
-                        byte data[] = new byte[1024];
+                        byte data[] = new byte[20240];
 
-                        subscriber.onNext(0l);
+                        subscriber.onNext(0);
                         long total = 0;
                         int count;
                         while ((count = input.read(data)) != -1) {
                             total += count;
-                            subscriber.onNext(total*100/totalByteLength);
                             output.write(data, 0, count);
+                            subscriber.onNext((int) (total * 100 / totalByteLength));
                         }
                         output.flush();
                         output.close();
@@ -347,28 +378,39 @@ public class MainActivity extends AppCompatActivity implements MusicPlayModel.IM
                     subscriber.onError(new IOException());
                 }
             }
-        });
+        }).onBackpressureDrop();
 
-        Subscriber<Long> subscriber = new Subscriber<Long>() {
+        Subscriber<Integer> subscriber = new Subscriber<Integer>() {
             @Override
             public void onCompleted() {
-
+                notificationBuilder.setContentTitle(fileName + "下载完毕");
+                mNotifyMgr.notify(DOWNLOAD_NOTIFICATION_ID, notificationBuilder.build());
             }
 
             @Override
             public void onError(Throwable e) {
-
+                e.printStackTrace();
+                notificationBuilder.setContentTitle(fileName + "下载失败");
+                mNotifyMgr.notify(DOWNLOAD_NOTIFICATION_ID, notificationBuilder.build());
+                SuperToast.create(MainActivity.this, fileName + "下载失败", SuperToast.Duration.LONG
+                        , Style.getStyle(Style.RED, SuperToast.Animations.FADE)).show();
             }
 
             @Override
-            public void onNext(Long precentage) {
-
+            public void onNext(Integer precentage) {
+                notificationBuilder.setProgress(100, precentage, false);
+                mNotifyMgr.notify(DOWNLOAD_NOTIFICATION_ID, notificationBuilder.build());
             }
 
             @Override
             public void onStart() {
-                super.onStart();
+                notificationBuilder.setSmallIcon(R.drawable.ic_launcher);
+                notificationBuilder.setContentTitle("正在下载" + fileName);
+                mNotifyMgr.notify(DOWNLOAD_NOTIFICATION_ID, notificationBuilder.build());
             }
         };
+
+        observable.observeOn(AndroidSchedulers.mainThread()).subscribeOn(Schedulers.newThread())
+                .subscribe(subscriber);
     }
 }
