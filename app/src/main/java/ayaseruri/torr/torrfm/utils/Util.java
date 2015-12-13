@@ -11,4 +11,12 @@ public class Util {
         Date date = new Date(ms);
         return new SimpleDateFormat("mm:ss").format(date);
     }
+
+//    public static ArrayList<LrcInfo> decodeLrc(String rawString){
+//
+//    }
+//
+//    public static ArrayList<LrcInfo> decodeLrc(File rawFile){
+//
+//    }
 }

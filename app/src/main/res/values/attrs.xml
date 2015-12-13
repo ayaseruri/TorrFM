@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="LrcView">
+        <attr name="currentColor" format="color"/>
+        <attr name="noCurrentColor" format="color"/>
+        <attr name="currentSize" format="dimension"/>
+        <attr name="noCurrentSize" format="dimension"/>
+        <attr name="lineSpace" format="dimension"/>
+    </declare-styleable>
+</resources>

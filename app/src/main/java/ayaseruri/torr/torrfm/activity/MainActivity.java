@@ -3,6 +3,7 @@ package ayaseruri.torr.torrfm.activity;
 import android.app.Dialog;
 import android.graphics.Bitmap;
 import android.net.Uri;
+import android.support.v4.view.ViewPager;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
@@ -11,11 +12,10 @@ import android.support.v7.widget.Toolbar;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
-import android.view.ViewTreeObserver;
 import android.view.WindowManager;
+import android.webkit.MimeTypeMap;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
-import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.SeekBar;
 import android.widget.TextView;
@@ -32,17 +32,22 @@ import com.facebook.imagepipeline.request.ImageRequest;
 import com.facebook.imagepipeline.request.ImageRequestBuilder;
 import com.github.johnpersano.supertoasts.SuperToast;
 import com.github.johnpersano.supertoasts.util.Style;
+import com.squareup.okhttp.Request;
+import com.squareup.okhttp.Response;
 
 import org.androidannotations.annotations.AfterViews;
 import org.androidannotations.annotations.Click;
 import org.androidannotations.annotations.EActivity;
 import org.androidannotations.annotations.UiThread;
 import org.androidannotations.annotations.ViewById;
-import org.androidannotations.annotations.res.DimensionPixelSizeRes;
 
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
 import ayaseruri.torr.torrfm.R;
+import ayaseruri.torr.torrfm.adaptar.MusicContentAdaptar;
 import ayaseruri.torr.torrfm.adaptar.MusicListAdaptar;
 import ayaseruri.torr.torrfm.adaptar.NavigationAdapar;
 import ayaseruri.torr.torrfm.controller.MusicController;
@@ -55,6 +60,11 @@ import ayaseruri.torr.torrfm.utils.LocalDisplay;
 import ayaseruri.torr.torrfm.utils.Util;
 import ayaseruri.torr.torrfm.view.MSeekBar;
 import cn.pedant.SweetAlert.SweetAlertDialog;
+import me.relex.circleindicator.CircleIndicator;
+import okio.BufferedSink;
+import okio.BufferedSource;
+import okio.Okio;
+import rx.Observable;
 import rx.Observer;
 import rx.Subscriber;
 import rx.android.schedulers.AndroidSchedulers;
@@ -66,6 +76,7 @@ public class MainActivity extends AppCompatActivity implements MusicPlayModel.IM
     private MusicController musicController;
     private LrcModel mLrcModel;
     private int musicCoverPanelHeight = 0;
+    private SimpleDraweeView musicCover;
 
     @ViewById
     Toolbar toolbar;
@@ -73,8 +84,6 @@ public class MainActivity extends AppCompatActivity implements MusicPlayModel.IM
     RecyclerView navigationRecycler;
     @ViewById(R.id.main_drawer)
     DrawerLayout mainDrawer;
-    @ViewById(R.id.music_cover)
-    SimpleDraweeView musicCover;
     @ViewById(R.id.bg)
     ImageView bg;
     @ViewById(R.id.music_play)
@@ -85,12 +94,10 @@ public class MainActivity extends AppCompatActivity implements MusicPlayModel.IM
     TextView musicTotalTime;
     @ViewById(R.id.music_progress)
     MSeekBar musicPorgress;
-    @ViewById(R.id.lrc_recycler)
-    RecyclerView lrcRecycler;
-    @ViewById(R.id.music_cover_panel)
-    FrameLayout musicCoverPanel;
-    @DimensionPixelSizeRes(R.dimen.lrc_item_height)
-    int lrcItemHeight;
+    @ViewById(R.id.music_content_view_pager)
+    ViewPager musicContentViewPager;
+    @ViewById(R.id.pager_indicator)
+    CircleIndicator pagerIndicator;
 
     @AfterViews
     void init(){
@@ -137,19 +144,16 @@ public class MainActivity extends AppCompatActivity implements MusicPlayModel.IM
             }
         });
 
-        lrcRecycler.setLayoutManager(new LinearLayoutManager(this));
-        ViewTreeObserver observer = musicCoverPanel.getViewTreeObserver();
-        observer.addOnPreDrawListener(new ViewTreeObserver.OnPreDrawListener() {
-            @Override
-            public boolean onPreDraw() {
-                musicCoverPanel.getViewTreeObserver().removeOnPreDrawListener(this);
-                musicCoverPanelHeight = musicCoverPanel.getHeight();
-                return true;
-            }
-        });
-        if(0 != musicCoverPanelHeight){
-            lrcRecycler.setPadding(0, musicCoverPanelHeight/2 - lrcItemHeight/2, 0, musicCoverPanelHeight/2);
-        }
+        LayoutInflater layoutInflater = LayoutInflater.from(this);
+        View musicContentCover = layoutInflater.inflate(R.layout.music_content_cover, null);
+        musicCover = (SimpleDraweeView)musicContentCover.findViewById(R.id.music_cover);
+        View musicContentLrc = layoutInflater.inflate(R.layout.music_content_lrc, null);
+        List<View> musicContent = new ArrayList<>();
+        musicContent.add(musicContentCover);
+        musicContent.add(musicContentLrc);
+        MusicContentAdaptar musicContentAdaptar = new MusicContentAdaptar(musicContent);
+        musicContentViewPager.setAdapter(musicContentAdaptar);
+        pagerIndicator.setViewPager(musicContentViewPager);
     }
 
     @Click(R.id.music_pre)
@@ -305,5 +309,66 @@ public class MainActivity extends AppCompatActivity implements MusicPlayModel.IM
     @Override
     public void onMusicTimeCurrentChange(LrcModel lrcModel) {
 
+    }
+
+    public void downloadMusic(final String url, final String fileName, final String savePath){
+        Observable<Long> observable = Observable.create(new Observable.OnSubscribe<Long>() {
+            @Override
+            public void call(Subscriber<? super Long> subscriber) {
+                Request request = new Request.Builder().url(url).build();
+                try {
+                    Response response = RetrofitClient.okHttpClient.newCall(request).execute();
+                    if(response.isSuccessful()){
+                        String mimeType = MimeTypeMap.getFileExtensionFromUrl(url);
+                        File file = new File(savePath + "/" + fileName + "." + mimeType);
+                        BufferedSink output = Okio.buffer(Okio.sink(file));
+
+                        BufferedSource input = Okio.buffer(Okio.source(response.body().byteStream()));
+                        long totalByteLength = response.body().contentLength();
+                        byte data[] = new byte[1024];
+
+                        subscriber.onNext(0l);
+                        long total = 0;
+                        int count;
+                        while ((count = input.read(data)) != -1) {
+                            total += count;
+                            subscriber.onNext(total*100/totalByteLength);
+                            output.write(data, 0, count);
+                        }
+                        output.flush();
+                        output.close();
+                        input.close();
+                        subscriber.onCompleted();
+                    }else {
+                        subscriber.onError(new IOException());
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
+                    subscriber.onError(new IOException());
+                }
+            }
+        });
+
+        Subscriber<Long> subscriber = new Subscriber<Long>() {
+            @Override
+            public void onCompleted() {
+
+            }
+
+            @Override
+            public void onError(Throwable e) {
+
+            }
+
+            @Override
+            public void onNext(Long precentage) {
+
+            }
+
+            @Override
+            public void onStart() {
+                super.onStart();
+            }
+        };
     }
 }
