@@ -90,9 +90,12 @@ public class MusicController implements MediaPlayer.OnBufferingUpdateListener, M
         }
     }
 
-    public void seekTo(int postion){
-        mediaPlayer.seekTo(postion/100 * musicPlayModel.getMusicTimeTotal());
-        musicPlayModel.setMusicTimeCurrent(postion);
+    public void setMusicTimeCurrent(int percentage){
+        musicPlayModel.setMusicTimeCurrent(percentage/100 * musicPlayModel.getMusicTimeTotal());
+    }
+
+    public void seekTo(){
+        mediaPlayer.seekTo(musicPlayModel.getMusicTimeCurrent());
     }
 
     @Override

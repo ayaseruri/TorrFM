@@ -11,6 +11,6 @@
         android:layout_height="260dp"
         android:layout_gravity="center"
         fresco:roundAsCircle="true"
-        fresco:roundingBorderWidth="4dp"
-        fresco:roundingBorderColor="#ebebeb" />
+        fresco:roundingBorderColor="#ebebeb"
+        fresco:roundingBorderWidth="4dp" />
 </LinearLayout>

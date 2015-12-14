@@ -17,7 +17,8 @@ public class RetrofitClient {
             .baseUrl("http://danmu.fm/")
             .addConverterFactory(GsonConverterFactory.create())
             .addCallAdapterFactory(RxJavaCallAdapterFactory.create())
-            .build().create(ApiService.class);
+            .build()
+            .create(ApiService.class);
     public static ExecutorService netExecutor = Executors.newFixedThreadPool(5);
     public static OkHttpClient okHttpClient = new OkHttpClient();
 }

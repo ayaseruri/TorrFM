@@ -3,8 +3,10 @@ package ayaseruri.torr.torrfm.activity;
 import android.app.Dialog;
 import android.app.NotificationManager;
 import android.graphics.Bitmap;
+import android.graphics.drawable.Animatable;
 import android.net.Uri;
 import android.os.Environment;
+import android.support.annotation.Nullable;
 import android.support.v4.view.ViewPager;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.AppCompatActivity;
@@ -16,6 +18,8 @@ import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.WindowManager;
+import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
 import android.webkit.MimeTypeMap;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
@@ -24,18 +28,25 @@ import android.widget.SeekBar;
 import android.widget.TextView;
 
 import com.commit451.nativestackblur.NativeStackBlur;
+import com.daimajia.androidanimations.library.Techniques;
+import com.daimajia.androidanimations.library.YoYo;
 import com.facebook.common.references.CloseableReference;
 import com.facebook.datasource.DataSource;
 import com.facebook.drawee.backends.pipeline.Fresco;
+import com.facebook.drawee.controller.BaseControllerListener;
+import com.facebook.drawee.controller.ControllerListener;
+import com.facebook.drawee.interfaces.DraweeController;
 import com.facebook.drawee.view.SimpleDraweeView;
 import com.facebook.imagepipeline.core.ImagePipeline;
 import com.facebook.imagepipeline.datasource.BaseBitmapDataSubscriber;
 import com.facebook.imagepipeline.image.CloseableImage;
+import com.facebook.imagepipeline.image.ImageInfo;
 import com.facebook.imagepipeline.request.ImageRequest;
 import com.facebook.imagepipeline.request.ImageRequestBuilder;
 import com.github.johnpersano.supertoasts.SuperToast;
 import com.github.johnpersano.supertoasts.util.Style;
 import com.j256.ormlite.dao.Dao;
+import com.nineoldandroids.animation.Animator;
 import com.squareup.okhttp.Request;
 import com.squareup.okhttp.Response;
 
@@ -86,6 +97,7 @@ public class MainActivity extends AppCompatActivity implements MusicPlayModel.IM
     private SimpleDraweeView musicCover;
     private NotificationManager mNotifyMgr;
     private DBHelper dbHelper;
+    private String musicCoverPre = "";
 
     @ViewById
     Toolbar toolbar;
@@ -107,10 +119,16 @@ public class MainActivity extends AppCompatActivity implements MusicPlayModel.IM
     ViewPager musicContentViewPager;
     @ViewById(R.id.pager_indicator)
     CircleIndicator pagerIndicator;
+    @ViewById(R.id.title)
+    TextView title;
+    @ViewById(R.id.subTile)
+    TextView subTitle;
 
     @AfterViews
     void init(){
         setSupportActionBar(toolbar);
+        getSupportActionBar().setDisplayShowTitleEnabled(false);
+
         dbHelper = DBHelper.getInstance(this);
         initDrawer();
         mNotifyMgr = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
@@ -141,7 +159,7 @@ public class MainActivity extends AppCompatActivity implements MusicPlayModel.IM
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
                 if (fromUser) {
-                    musicController.seekTo(progress);
+                    musicController.setMusicTimeCurrent(progress);
                 }
             }
 
@@ -152,7 +170,7 @@ public class MainActivity extends AppCompatActivity implements MusicPlayModel.IM
 
             @Override
             public void onStopTrackingTouch(SeekBar seekBar) {
-
+                musicController.seekTo();
             }
         });
 
@@ -166,6 +184,8 @@ public class MainActivity extends AppCompatActivity implements MusicPlayModel.IM
         MusicContentAdaptar musicContentAdaptar = new MusicContentAdaptar(musicContent);
         musicContentViewPager.setAdapter(musicContentAdaptar);
         pagerIndicator.setViewPager(musicContentViewPager);
+
+        getRandSongList("1");
     }
 
     @Click(R.id.music_pre)
@@ -301,16 +321,21 @@ public class MainActivity extends AppCompatActivity implements MusicPlayModel.IM
     }
 
     void onNavigationItemClick(int postion, ChannelInfo channelInfo){
+        if (mainDrawer.isDrawerOpen(Gravity.LEFT)) {
+            mainDrawer.closeDrawers();
+        }
+        getRandSongList(channelInfo.getHid());
+    }
+
+    void getRandSongList(String hid){
         final SweetAlertDialog progressDialog = new SweetAlertDialog(MainActivity.this, SweetAlertDialog.PROGRESS_TYPE);
         progressDialog.setCancelable(false);
         progressDialog.setTitleText("正在拉取歌单…");
-
-        RetrofitClient.apiService.getRandSong().observeOn(AndroidSchedulers.mainThread())
+        RetrofitClient.apiService.getRandSong(hid).observeOn(AndroidSchedulers.mainThread())
                 .subscribeOn(Schedulers.from(RetrofitClient.netExecutor))
                 .subscribe(new Subscriber<List<SongInfo>>() {
                     @Override
                     public void onStart() {
-                        mainDrawer.closeDrawers();
                         progressDialog.show();
                     }
 
@@ -338,9 +363,69 @@ public class MainActivity extends AppCompatActivity implements MusicPlayModel.IM
 
     @Override
     @UiThread
-    public void onMusicPlayStateChange(MusicPlayModel musicPlayModel) {
-        if(null != musicPlayModel.getMusicInfoCurrent().getImg()){
-            musicCover.setImageURI(Uri.parse(musicPlayModel.getMusicInfoCurrent().getImg()));
+    public void onMusicPlayStateChange(final MusicPlayModel musicPlayModel) {
+        musicPorgress.setSecondaryProgress(musicPlayModel.getMusicBufferPercent());
+        if(0 != musicPlayModel.getMusicTimeTotal()){
+            musicPorgress.setProgress(musicPlayModel.getMusicTimeCurrent() * 100 / musicPlayModel.getMusicTimeTotal());
+        }
+        musicPlayBtn.setChecked(musicPlayModel.isMusicPlaying());
+        musicCurrentTime.setText(Util.FormatMusicTime(musicPlayModel.getMusicTimeCurrent()));
+        musicTotalTime.setText(Util.FormatMusicTime(musicPlayModel.getMusicTimeTotal()));
+        mLrcModel.setTimeCurrent(musicPlayModel.getMusicTimeCurrent());
+
+        if(null != musicPlayModel.getMusicInfoCurrent().getImg() && !musicCoverPre.equals(musicPlayModel.getMusicInfoCurrent().getImg())){
+            final Animation fadeInAnimation = AnimationUtils.loadAnimation(this, R.anim.music_bg_fade_in);
+            final Animation fadeOutAnimation = AnimationUtils.loadAnimation(this, R.anim.music_bg_fade_out);
+            musicCoverPre = musicPlayModel.getMusicInfoCurrent().getImg();
+            YoYo.with(Techniques.SlideOutUp).duration(200).withListener(new Animator.AnimatorListener() {
+                @Override
+                public void onAnimationStart(Animator animation) {
+
+                }
+
+                @Override
+                public void onAnimationEnd(Animator animation) {
+                    ControllerListener controllerListener = new BaseControllerListener<ImageInfo>() {
+                        @Override
+                        public void onFinalImageSet(String id, @Nullable ImageInfo imageInfo, @Nullable Animatable anim) {
+                            if (imageInfo == null) {
+                                return;
+                            }
+                            runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    YoYo.with(Techniques.DropOut).playOn(musicCover);
+                                }
+                            });
+                        }
+
+                        @Override
+                        public void onIntermediateImageSet(String id, @Nullable ImageInfo imageInfo) {
+
+                        }
+
+                        @Override
+                        public void onFailure(String id, Throwable throwable) {
+
+                        }
+                    };
+
+                    DraweeController controller = Fresco.newDraweeControllerBuilder()
+                            .setControllerListener(controllerListener)
+                            .setUri(Uri.parse(musicPlayModel.getMusicInfoCurrent().getImg())).build();
+                    musicCover.setController(controller);
+                }
+
+                @Override
+                public void onAnimationCancel(Animator animation) {
+
+                }
+
+                @Override
+                public void onAnimationRepeat(Animator animation) {
+
+                }
+            }).playOn(musicCover);
 
             ImagePipeline imagePipeline = Fresco.getImagePipeline();
             ImageRequestBuilder builder = ImageRequestBuilder.newBuilderWithSource(Uri.parse(musicPlayModel.getMusicInfoCurrent().getImg()));
@@ -350,10 +435,32 @@ public class MainActivity extends AppCompatActivity implements MusicPlayModel.IM
                 @Override
                 protected void onNewResultImpl(Bitmap bitmap) {
                     final Bitmap bm = NativeStackBlur.process(bitmap, 25);
+                    fadeOutAnimation.setAnimationListener(new Animation.AnimationListener() {
+                        @Override
+                        public void onAnimationStart(Animation animation) {
+
+                        }
+
+                        @Override
+                        public void onAnimationEnd(Animation animation) {
+                            runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    bg.startAnimation(fadeInAnimation);
+                                    bg.setImageBitmap(bm);
+                                }
+                            });
+                        }
+
+                        @Override
+                        public void onAnimationRepeat(Animation animation) {
+
+                        }
+                    });
                     runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
-                            bg.setImageBitmap(bm);
+                            bg.startAnimation(fadeOutAnimation);
                         }
                     });
                 }
@@ -363,21 +470,54 @@ public class MainActivity extends AppCompatActivity implements MusicPlayModel.IM
 
                 }
             }, RetrofitClient.netExecutor);
+
+            YoYo.with(Techniques.RotateOutUpLeft).duration(200).withListener(new Animator.AnimatorListener() {
+                @Override
+                public void onAnimationStart(Animator animation) {
+                    if(subTitle.getVisibility() == View.GONE){
+                        subTitle.setVisibility(View.VISIBLE);
+                    }
+                    YoYo.with(Techniques.RotateOutUpLeft).duration(200).withListener(new Animator.AnimatorListener() {
+                        @Override
+                        public void onAnimationStart(Animator animation) {
+
+                        }
+
+                        @Override
+                        public void onAnimationEnd(Animator animation) {
+                            subTitle.setText(musicPlayModel.getMusicInfoCurrent().getArtist_name());
+                            YoYo.with(Techniques.RotateInDownLeft).playOn(subTitle);
+                        }
+
+                        @Override
+                        public void onAnimationCancel(Animator animation) {
+
+                        }
+
+                        @Override
+                        public void onAnimationRepeat(Animator animation) {
+
+                        }
+                    }).playOn(subTitle);
+                }
+
+                @Override
+                public void onAnimationEnd(Animator animation) {
+                    title.setText(musicPlayModel.getMusicInfoCurrent().getTitle());
+                    YoYo.with(Techniques.RotateInDownLeft).playOn(title);
+                }
+
+                @Override
+                public void onAnimationCancel(Animator animation) {
+
+                }
+
+                @Override
+                public void onAnimationRepeat(Animator animation) {
+
+                }
+            }).playOn(title);
         }
-
-        musicPorgress.setSecondaryProgress(musicPlayModel.getMusicBufferPercent());
-        if(0 != musicPlayModel.getMusicTimeTotal()){
-            musicPorgress.setProgress(musicPlayModel.getMusicTimeCurrent() * 100 / musicPlayModel.getMusicTimeTotal());
-        }
-        musicPlayBtn.setChecked(musicPlayModel.isMusicPlaying());
-        musicCurrentTime.setText(Util.FormatMusicTime(musicPlayModel.getMusicTimeCurrent()));
-        musicTotalTime.setText(Util.FormatMusicTime(musicPlayModel.getMusicTimeTotal()));
-
-        toolbar.setTitle(musicPlayModel.getMusicInfoCurrent().getTitle());
-        toolbar.setSubtitle(musicPlayModel.getMusicInfoCurrent().getArtist_name());
-
-        mLrcModel.setTimeCurrent(musicPlayModel.getMusicTimeCurrent());
-
     }
 
     @Override
