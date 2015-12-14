@@ -59,4 +59,6 @@ dependencies {
 
     compile 'me.relex:circleindicator:1.1.6@aar'
 
+    compile 'com.j256.ormlite:ormlite-android:4.48'
+    compile 'com.j256.ormlite:ormlite-core:4.48'
 }

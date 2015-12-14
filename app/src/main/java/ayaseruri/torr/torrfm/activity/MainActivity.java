@@ -35,6 +35,7 @@ import com.facebook.imagepipeline.request.ImageRequest;
 import com.facebook.imagepipeline.request.ImageRequestBuilder;
 import com.github.johnpersano.supertoasts.SuperToast;
 import com.github.johnpersano.supertoasts.util.Style;
+import com.j256.ormlite.dao.Dao;
 import com.squareup.okhttp.Request;
 import com.squareup.okhttp.Response;
 
@@ -46,6 +47,7 @@ import org.androidannotations.annotations.ViewById;
 
 import java.io.File;
 import java.io.IOException;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -54,6 +56,7 @@ import ayaseruri.torr.torrfm.adaptar.MusicContentAdaptar;
 import ayaseruri.torr.torrfm.adaptar.MusicListAdaptar;
 import ayaseruri.torr.torrfm.adaptar.NavigationAdapar;
 import ayaseruri.torr.torrfm.controller.MusicController;
+import ayaseruri.torr.torrfm.db.DBHelper;
 import ayaseruri.torr.torrfm.model.LrcModel;
 import ayaseruri.torr.torrfm.model.MusicPlayModel;
 import ayaseruri.torr.torrfm.network.RetrofitClient;
@@ -68,9 +71,9 @@ import okio.BufferedSink;
 import okio.BufferedSource;
 import okio.Okio;
 import rx.Observable;
-import rx.Observer;
 import rx.Subscriber;
 import rx.android.schedulers.AndroidSchedulers;
+import rx.functions.Func1;
 import rx.schedulers.Schedulers;
 
 @EActivity(R.layout.activity_main)
@@ -80,9 +83,9 @@ public class MainActivity extends AppCompatActivity implements MusicPlayModel.IM
     private MusicPlayModel musicPlayModel;
     private MusicController musicController;
     private LrcModel mLrcModel;
-    private int musicCoverPanelHeight = 0;
     private SimpleDraweeView musicCover;
     private NotificationManager mNotifyMgr;
+    private DBHelper dbHelper;
 
     @ViewById
     Toolbar toolbar;
@@ -108,6 +111,7 @@ public class MainActivity extends AppCompatActivity implements MusicPlayModel.IM
     @AfterViews
     void init(){
         setSupportActionBar(toolbar);
+        dbHelper = DBHelper.getInstance(this);
         initDrawer();
         mNotifyMgr = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
 
@@ -221,9 +225,33 @@ public class MainActivity extends AppCompatActivity implements MusicPlayModel.IM
     }
 
     void initDrawer(){
-        RetrofitClient.apiService.getChannelInfo().observeOn(AndroidSchedulers.mainThread())
+        RetrofitClient.apiService.getChannelInfo()
                 .subscribeOn(Schedulers.from(RetrofitClient.netExecutor))
-                .subscribe(new Observer<List<ChannelInfo>>() {
+                .observeOn(Schedulers.from(RetrofitClient.netExecutor))
+                .map(new Func1<List<ChannelInfo>, List<ChannelInfo>>() {
+                    @Override
+                    public List<ChannelInfo> call(List<ChannelInfo> channelInfos) {
+                        Dao channelDao = null;
+                        try {
+                            channelDao = dbHelper.getDBDao(ChannelInfo.class);
+                        } catch (SQLException e) {
+                            e.printStackTrace();
+                        }
+
+                        if (null != channelDao) {
+                            for (ChannelInfo channelInfo : channelInfos) {
+                                try {
+                                    channelDao.createOrUpdate(channelInfo);
+                                } catch (SQLException e) {
+                                    e.printStackTrace();
+                                }
+                            }
+                        }
+                        return channelInfos;
+                    }
+                })
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(new Subscriber<List<ChannelInfo>>() {
                     @Override
                     public void onCompleted() {
 
@@ -231,12 +259,32 @@ public class MainActivity extends AppCompatActivity implements MusicPlayModel.IM
 
                     @Override
                     public void onError(Throwable e) {
-
+                        SuperToast.create(MainActivity.this, "音乐分类初始化失败"
+                                , SuperToast.Duration.LONG, Style.getStyle(Style.RED, SuperToast.Animations.FADE)).show();
                     }
 
                     @Override
                     public void onNext(List<ChannelInfo> channelInfos) {
                         initNavigationRecycler(channelInfos);
+                    }
+
+                    @Override
+                    public void onStart() {
+                        Dao channelDao = null;
+                        try {
+                            channelDao = dbHelper.getDBDao(ChannelInfo.class);
+                        } catch (SQLException e) {
+                            e.printStackTrace();
+                        }
+
+                        if(null != channelDao){
+                            try {
+                                List<ChannelInfo> channelInfos = channelDao.queryForAll();
+                                initNavigationRecycler(channelInfos);
+                            } catch (SQLException e) {
+                                e.printStackTrace();
+                            }
+                        }
                     }
                 });
     }
@@ -350,13 +398,16 @@ public class MainActivity extends AppCompatActivity implements MusicPlayModel.IM
                         String mimeType = MimeTypeMap.getFileExtensionFromUrl(url);
                         File musicFile = new File(savePath + fileName + "." + mimeType);
                         if(!musicFile.exists()){
-                            musicFile.createNewFile();
+                            if(!musicFile.createNewFile()){
+                                subscriber.onError(new IOException());
+                                return;
+                            }
                         }
                         BufferedSink output = Okio.buffer(Okio.sink(musicFile));
 
                         BufferedSource input = Okio.buffer(Okio.source(response.body().byteStream()));
                         long totalByteLength = response.body().contentLength();
-                        byte data[] = new byte[20240];
+                        byte data[] = new byte[1024];
 
                         subscriber.onNext(0);
                         long total = 0;
@@ -410,7 +461,7 @@ public class MainActivity extends AppCompatActivity implements MusicPlayModel.IM
             }
         };
 
-        observable.observeOn(AndroidSchedulers.mainThread()).subscribeOn(Schedulers.newThread())
+        observable.observeOn(AndroidSchedulers.mainThread()).subscribeOn(Schedulers.from(RetrofitClient.netExecutor))
                 .subscribe(subscriber);
     }
 }

@@ -1,8 +1,12 @@
 package ayaseruri.torr.torrfm.objectholder;
 
+import com.j256.ormlite.field.DatabaseField;
+import com.j256.ormlite.table.DatabaseTable;
+
 /**
  * Created by ayaseruri on 15/12/11.
  */
+@DatabaseTable
 public class ChannelInfo {
 
     /**
@@ -17,9 +21,11 @@ public class ChannelInfo {
      * created : 0
      * modified : 0
      */
-
+    @DatabaseField(id = true)
     private String hid;
+    @DatabaseField
     private String title;
+    @DatabaseField
     private String img;
     private String text;
     private String data;
