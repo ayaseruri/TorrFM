@@ -13,15 +13,17 @@
         android:paddingRight="30dp"
         android:gravity="center">
         <LinearLayout
+            android:id="@+id/music_like_panel"
             android:layout_width="0dp"
             android:layout_height="48dp"
             android:layout_weight="1"
             android:gravity="center">
             <CheckBox
+                android:id="@+id/music_like"
                 android:button="@null"
                 android:layout_width="32dp"
                 android:layout_height="32dp"
-                android:background="@drawable/music_like_selector"/>
+                android:background="@drawable/music_like_selector" />
         </LinearLayout>
         <ImageView
             android:id="@+id/music_download"

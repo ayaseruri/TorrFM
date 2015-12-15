@@ -123,6 +123,8 @@ public class MainActivity extends AppCompatActivity implements MusicPlayModel.IM
     TextView title;
     @ViewById(R.id.subTile)
     TextView subTitle;
+    @ViewById(R.id.music_like)
+    CheckBox musicLike;
 
     @AfterViews
     void init(){
@@ -184,6 +186,17 @@ public class MainActivity extends AppCompatActivity implements MusicPlayModel.IM
         MusicContentAdaptar musicContentAdaptar = new MusicContentAdaptar(musicContent);
         musicContentViewPager.setAdapter(musicContentAdaptar);
         pagerIndicator.setViewPager(musicContentViewPager);
+
+        musicLike.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                if(!isChecked){
+                    YoYo.with(Techniques.Hinge).playOn(musicLike);
+                }else {
+                    YoYo.with(Techniques.Swing).playOn(musicLike);
+                }
+            }
+        });
 
         getRandSongList("1");
     }
@@ -433,8 +446,7 @@ public class MainActivity extends AppCompatActivity implements MusicPlayModel.IM
             DataSource<CloseableReference<CloseableImage>> dataSource = imagePipeline.fetchDecodedImage(request, this);
             dataSource.subscribe(new BaseBitmapDataSubscriber() {
                 @Override
-                protected void onNewResultImpl(Bitmap bitmap) {
-                    final Bitmap bm = NativeStackBlur.process(bitmap, 25);
+                protected void onNewResultImpl(final Bitmap bitmap) {
                     fadeOutAnimation.setAnimationListener(new Animation.AnimationListener() {
                         @Override
                         public void onAnimationStart(Animation animation) {
@@ -446,6 +458,7 @@ public class MainActivity extends AppCompatActivity implements MusicPlayModel.IM
                             runOnUiThread(new Runnable() {
                                 @Override
                                 public void run() {
+                                    Bitmap bm = NativeStackBlur.process(bitmap, 25);
                                     bg.startAnimation(fadeInAnimation);
                                     bg.setImageBitmap(bm);
                                 }
