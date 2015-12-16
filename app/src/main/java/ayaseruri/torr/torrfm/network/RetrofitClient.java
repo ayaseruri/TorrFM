@@ -2,9 +2,6 @@ package ayaseruri.torr.torrfm.network;
 
 import com.squareup.okhttp.OkHttpClient;
 
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-
 import retrofit.GsonConverterFactory;
 import retrofit.Retrofit;
 import retrofit.RxJavaCallAdapterFactory;
@@ -19,6 +16,5 @@ public class RetrofitClient {
             .addCallAdapterFactory(RxJavaCallAdapterFactory.create())
             .build()
             .create(ApiService.class);
-    public static ExecutorService netExecutor = Executors.newFixedThreadPool(5);
     public static OkHttpClient okHttpClient = new OkHttpClient();
 }

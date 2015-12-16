@@ -23,7 +23,8 @@
                 android:button="@null"
                 android:layout_width="32dp"
                 android:layout_height="32dp"
-                android:background="@drawable/music_like_selector" />
+                android:background="@drawable/music_like_selector"
+                android:checked="false"/>
         </LinearLayout>
         <ImageView
             android:id="@+id/music_download"
@@ -31,6 +32,12 @@
             android:layout_height="32dp"
             android:layout_weight="1"
             android:src="@drawable/music_download"/>
+        <ImageView
+            android:id="@+id/music_share"
+            android:layout_width="0dp"
+            android:layout_height="32dp"
+            android:layout_weight="1"
+            android:src="@drawable/share_icon"/>
     </LinearLayout>
     
     <RelativeLayout

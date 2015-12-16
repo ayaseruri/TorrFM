@@ -17,6 +17,7 @@ public class MusicPlayModel {
     private int musicIndexCurrent;
     private int musicBufferPercent;
     private boolean isMusicPlaying;
+    private boolean isLike;
 
     public MusicPlayModel() {
         iMusicPlays = new ArrayList<>();
@@ -24,6 +25,16 @@ public class MusicPlayModel {
         musicTimeCurrent = 0;
         musicTimeTotal = 0;
         isMusicPlaying = false;
+        isLike = false;
+    }
+
+    public boolean isLike() {
+        return isLike;
+    }
+
+    public void setIsLike(boolean isLike) {
+        this.isLike = isLike;
+        update();
     }
 
     public List<SongInfo> getSongInfos() {

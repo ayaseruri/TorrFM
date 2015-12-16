@@ -6,12 +6,18 @@ import android.media.MediaPlayer;
 
 import com.github.johnpersano.supertoasts.SuperToast;
 import com.github.johnpersano.supertoasts.util.Style;
+import com.j256.ormlite.dao.Dao;
 
 import java.io.IOException;
+import java.sql.SQLException;
+import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 
+import ayaseruri.torr.torrfm.db.DBHelper;
+import ayaseruri.torr.torrfm.global.Constant;
 import ayaseruri.torr.torrfm.model.MusicPlayModel;
+import ayaseruri.torr.torrfm.objectholder.SongInfo;
 
 /**
  * Created by ayaseruri on 15/12/12.
@@ -21,8 +27,9 @@ public class MusicController implements MediaPlayer.OnBufferingUpdateListener, M
     private MediaPlayer mediaPlayer;
     private MusicPlayModel musicPlayModel;
     private Timer mTimer;
+    private DBHelper dbHelper;
 
-    public MusicController(Context context, final MusicPlayModel musicPlayModel) {
+    public MusicController(final Context context, final MusicPlayModel musicPlayModel) {
         this.musicPlayModel = musicPlayModel;
         this.mContext = context;
 
@@ -31,6 +38,8 @@ public class MusicController implements MediaPlayer.OnBufferingUpdateListener, M
         mediaPlayer.setOnBufferingUpdateListener(this);
         mediaPlayer.setOnPreparedListener(this);
         mediaPlayer.setOnCompletionListener(this);
+
+        dbHelper = DBHelper.getInstance(context);
 
         mTimer = new Timer();
         mTimer.schedule(new TimerTask() {
@@ -49,6 +58,7 @@ public class MusicController implements MediaPlayer.OnBufferingUpdateListener, M
     }
 
     public void preparePlay(){
+        checkIsLike();
         if(null != musicPlayModel.getMusicInfoCurrent().getUrl()){
             try {
                 mediaPlayer.reset();
@@ -71,7 +81,6 @@ public class MusicController implements MediaPlayer.OnBufferingUpdateListener, M
     public void pre(){
         musicPlayModel.setMusicIndexCurrent(musicPlayModel.getMusicIndexCurrent() - 1);
         preparePlay();
-
         if(musicPlayModel.isMusicPlaying()){
             play();
         }else {
@@ -82,7 +91,6 @@ public class MusicController implements MediaPlayer.OnBufferingUpdateListener, M
     public void next(){
         musicPlayModel.setMusicIndexCurrent(musicPlayModel.getMusicIndexCurrent() + 1);
         preparePlay();
-
         if(musicPlayModel.isMusicPlaying()){
             play();
         }else {
@@ -91,7 +99,7 @@ public class MusicController implements MediaPlayer.OnBufferingUpdateListener, M
     }
 
     public void setMusicTimeCurrent(int percentage){
-        musicPlayModel.setMusicTimeCurrent(percentage/100 * musicPlayModel.getMusicTimeTotal());
+        musicPlayModel.setMusicTimeCurrent(percentage / 100 * musicPlayModel.getMusicTimeTotal());
     }
 
     public void seekTo(){
@@ -115,5 +123,32 @@ public class MusicController implements MediaPlayer.OnBufferingUpdateListener, M
     @Override
     public void onCompletion(MediaPlayer mp) {
 
+    }
+
+    public void like(){
+        musicPlayModel.setIsLike(true);
+    }
+
+    public void dislike(){
+        musicPlayModel.setIsLike(false);
+    }
+
+    private void checkIsLike(){
+        Constant.executor.execute(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    Dao songInfoDao = dbHelper.getDBDao(SongInfo.class);
+                    List<SongInfo> songInfos = songInfoDao.queryBuilder().where().eq("title", musicPlayModel.getMusicInfoCurrent().getTitle()).query();
+                    if(null != songInfos && songInfos.size() > 0){
+                        musicPlayModel.setIsLike(true);
+                    }else {
+                        musicPlayModel.setIsLike(false);
+                    }
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
     }
 }

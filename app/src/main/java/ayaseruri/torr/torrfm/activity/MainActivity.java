@@ -46,6 +46,7 @@ import com.facebook.imagepipeline.request.ImageRequestBuilder;
 import com.github.johnpersano.supertoasts.SuperToast;
 import com.github.johnpersano.supertoasts.util.Style;
 import com.j256.ormlite.dao.Dao;
+import com.j256.ormlite.stmt.DeleteBuilder;
 import com.nineoldandroids.animation.Animator;
 import com.squareup.okhttp.Request;
 import com.squareup.okhttp.Response;
@@ -61,6 +62,7 @@ import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import ayaseruri.torr.torrfm.R;
 import ayaseruri.torr.torrfm.adaptar.MusicContentAdaptar;
@@ -68,6 +70,7 @@ import ayaseruri.torr.torrfm.adaptar.MusicListAdaptar;
 import ayaseruri.torr.torrfm.adaptar.NavigationAdapar;
 import ayaseruri.torr.torrfm.controller.MusicController;
 import ayaseruri.torr.torrfm.db.DBHelper;
+import ayaseruri.torr.torrfm.global.Constant;
 import ayaseruri.torr.torrfm.model.LrcModel;
 import ayaseruri.torr.torrfm.model.MusicPlayModel;
 import ayaseruri.torr.torrfm.network.RetrofitClient;
@@ -90,6 +93,8 @@ import rx.schedulers.Schedulers;
 @EActivity(R.layout.activity_main)
 public class MainActivity extends AppCompatActivity implements MusicPlayModel.IMusicPlay, LrcModel.ILrc {
     private static final int DOWNLOAD_NOTIFICATION_ID = 0;
+    private static final int MUSIC_IMG = 1;
+    private static final int MUSIC_LRC = 2;
 
     private MusicPlayModel musicPlayModel;
     private MusicController musicController;
@@ -190,10 +195,13 @@ public class MainActivity extends AppCompatActivity implements MusicPlayModel.IM
         musicLike.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                if(!isChecked){
-                    YoYo.with(Techniques.Hinge).playOn(musicLike);
-                }else {
-                    YoYo.with(Techniques.Swing).playOn(musicLike);
+                if (isChecked) {
+                    musicController.like();
+                    onMusicDownLoadClick();
+                    //经过验证这里面也是主线程
+                } else {
+                    musicController.dislike();
+                    deletMusicByName(musicPlayModel.getMusicInfoCurrent().getTitle());
                 }
             }
         });
@@ -210,12 +218,13 @@ public class MainActivity extends AppCompatActivity implements MusicPlayModel.IM
     void onMusicNext(){
         musicController.next();
     }
+
     @Click(R.id.music_list)
     void onMusicList(){
         if(null == musicPlayModel.getSongInfos() || musicPlayModel.getSongInfos().size() == 0){
             mainDrawer.openDrawer(Gravity.LEFT);
             SuperToast.create(this, "请选择类别以初始化歌单", SuperToast.Duration.LONG
-            , Style.getStyle(Style.RED, SuperToast.Animations.FADE)).show();
+                    , Style.getStyle(Style.RED, SuperToast.Animations.FADE)).show();
         }else {
             Dialog musicListDialog = new Dialog(this);
             musicListDialog.setTitle("播放列表（" + musicPlayModel.getSongInfos().size() + "）");
@@ -242,25 +251,132 @@ public class MainActivity extends AppCompatActivity implements MusicPlayModel.IM
     @Click(R.id.music_download)
     void onMusicDownLoadClick(){
         String sdStatus = Environment.getExternalStorageState();
+        final NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(MainActivity.this);
         if (sdStatus.equals(Environment.MEDIA_MOUNTED) || sdStatus.equals(Environment.MEDIA_SHARED)) {
-            String savePath = Environment.getExternalStorageDirectory().getAbsolutePath() + "/TorrFM/music/";
+            final String savePath = Environment.getExternalStorageDirectory().getAbsolutePath() + "/TorrFM/music/";
             File saveDir = new File(savePath);
             if (!saveDir.exists()) {
                 saveDir.mkdirs();
             }
-            downloadMusic(musicPlayModel.getMusicInfoCurrent().getSrc()
-                    , musicPlayModel.getMusicInfoCurrent().getTitle()
-                    , savePath);
+            Observable.create(new Observable.OnSubscribe<List<SongInfo>>() {
+                @Override
+                public void call(Subscriber<? super List<SongInfo>> subscriber) {
+                    try {
+                        Dao dao = dbHelper.getDao(SongInfo.class);
+                        subscriber.onNext((List<SongInfo>)dao.queryBuilder().where().eq("title"
+                                , musicPlayModel.getMusicInfoCurrent().getTitle()).query());
+                    } catch (SQLException e) {
+                        e.printStackTrace();
+                    }
+                }
+            })
+            .flatMap(new Func1<List<SongInfo>, Observable<Integer>>() {
+                @Override
+                public Observable<Integer> call(final List<SongInfo> songInfos) {
+                    return Observable.create(new Observable.OnSubscribe<Integer>() {
+                            @Override
+                            public void call(Subscriber<? super Integer> subscriber) {
+                                if (null != songInfos && songInfos.size() > 0) {
+                                    subscriber.onCompleted();
+                                }
+
+                                Request request = new Request.Builder().url(musicPlayModel.getMusicInfoCurrent().getSrc()).build();
+                                BufferedSink output = null;
+                                BufferedSource input = null;
+                                try {
+                                    Response response = RetrofitClient.okHttpClient.newCall(request).execute();
+                                    if (response.isSuccessful()) {
+                                        String mimeType = MimeTypeMap.getFileExtensionFromUrl(musicPlayModel.getMusicInfoCurrent().getSrc());
+                                        File musicFile = new File(savePath + musicPlayModel.getMusicInfoCurrent().getTitle() + "." + mimeType);
+                                        if (!musicFile.exists()) {
+                                            if (!musicFile.createNewFile()) {
+                                                subscriber.onError(new IOException());
+                                                return;
+                                            }
+                                        }
+                                        output = Okio.buffer(Okio.sink(musicFile));
+
+                                        input = Okio.buffer(Okio.source(response.body().byteStream()));
+                                        long totalByteLength = response.body().contentLength();
+                                        byte data[] = new byte[2048];
+
+                                        subscriber.onNext(0);
+                                        long total = 0;
+                                        int count;
+                                        while ((count = input.read(data)) != -1) {
+                                            total += count;
+                                            output.write(data, 0, count);
+                                            subscriber.onNext((int) (total * 100 / totalByteLength));
+                                        }
+                                        output.flush();
+                                        subscriber.onCompleted();
+
+                                        if (!musicLike.isChecked()) {
+                                            try {
+                                                Dao songInfoDao = dbHelper.getDBDao(SongInfo.class);
+                                                SongInfo songInfo = new SongInfo();
+                                                songInfo.setSrc(savePath + musicPlayModel.getMusicInfoCurrent().getTitle() + "." + mimeType);
+                                                songInfo.setTime(System.currentTimeMillis());
+                                                songInfoDao.createOrUpdate(songInfo);
+                                            } catch (SQLException e) {
+                                                e.printStackTrace();
+                                            }
+                                        }
+                                    } else {
+                                        subscriber.onError(new IOException());
+                                    }
+                                } catch (IOException e) {
+                                    e.printStackTrace();
+                                    subscriber.onError(new IOException());
+                                }
+                            }
+                        })
+                        .throttleFirst(1000, TimeUnit.MILLISECONDS);
+                    }
+            })
+            .subscribeOn(Schedulers.from(Constant.executor))
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribe(new Subscriber<Integer>() {
+                @Override
+                public void onCompleted() {
+                    notificationBuilder.setProgress(100, 100, false);
+                    notificationBuilder.setContentTitle(musicPlayModel.getMusicInfoCurrent().getTitle() + "下载完毕");
+                    mNotifyMgr.notify(DOWNLOAD_NOTIFICATION_ID, notificationBuilder.build());
+                }
+
+                @Override
+                public void onError(Throwable e) {
+                    e.printStackTrace();
+                    notificationBuilder.setContentTitle(musicPlayModel.getMusicInfoCurrent().getTitle() + "下载失败");
+                    mNotifyMgr.notify(DOWNLOAD_NOTIFICATION_ID, notificationBuilder.build());
+                    SuperToast.create(MainActivity.this, musicPlayModel.getMusicInfoCurrent().getTitle() + "下载失败", SuperToast.Duration.LONG
+                            , Style.getStyle(Style.RED, SuperToast.Animations.FADE)).show();
+                }
+
+                @Override
+                public void onNext(Integer precentage) {
+                    notificationBuilder.setProgress(100, precentage, false);
+                    mNotifyMgr.notify(DOWNLOAD_NOTIFICATION_ID, notificationBuilder.build());
+                }
+
+                @Override
+                public void onStart() {
+                    notificationBuilder.setSmallIcon(R.drawable.ic_launcher);
+                    notificationBuilder.setContentTitle("正在下载" + musicPlayModel.getMusicInfoCurrent().getTitle());
+                    mNotifyMgr.notify(DOWNLOAD_NOTIFICATION_ID, notificationBuilder.build());
+                }
+            });
         }else {
-            SuperToast.create(this, "手机存储似乎暂时无法使用", SuperToast.Duration.LONG
+            SuperToast.create(this, "手机存储空间似乎不可用"
+                    , SuperToast.Duration.LONG
                     , Style.getStyle(Style.RED, SuperToast.Animations.FADE)).show();
         }
     }
 
     void initDrawer(){
         RetrofitClient.apiService.getChannelInfo()
-                .subscribeOn(Schedulers.from(RetrofitClient.netExecutor))
-                .observeOn(Schedulers.from(RetrofitClient.netExecutor))
+                .subscribeOn(Schedulers.from(Constant.executor))
+                .observeOn(Schedulers.from(Constant.executor))
                 .map(new Func1<List<ChannelInfo>, List<ChannelInfo>>() {
                     @Override
                     public List<ChannelInfo> call(List<ChannelInfo> channelInfos) {
@@ -310,7 +426,7 @@ public class MainActivity extends AppCompatActivity implements MusicPlayModel.IM
                             e.printStackTrace();
                         }
 
-                        if(null != channelDao){
+                        if (null != channelDao) {
                             try {
                                 List<ChannelInfo> channelInfos = channelDao.queryForAll();
                                 initNavigationRecycler(channelInfos);
@@ -345,7 +461,7 @@ public class MainActivity extends AppCompatActivity implements MusicPlayModel.IM
         progressDialog.setCancelable(false);
         progressDialog.setTitleText("正在拉取歌单…");
         RetrofitClient.apiService.getRandSong(hid).observeOn(AndroidSchedulers.mainThread())
-                .subscribeOn(Schedulers.from(RetrofitClient.netExecutor))
+                .subscribeOn(Schedulers.from(Constant.executor))
                 .subscribe(new Subscriber<List<SongInfo>>() {
                     @Override
                     public void onStart() {
@@ -381,10 +497,21 @@ public class MainActivity extends AppCompatActivity implements MusicPlayModel.IM
         if(0 != musicPlayModel.getMusicTimeTotal()){
             musicPorgress.setProgress(musicPlayModel.getMusicTimeCurrent() * 100 / musicPlayModel.getMusicTimeTotal());
         }
-        musicPlayBtn.setChecked(musicPlayModel.isMusicPlaying());
+
         musicCurrentTime.setText(Util.FormatMusicTime(musicPlayModel.getMusicTimeCurrent()));
         musicTotalTime.setText(Util.FormatMusicTime(musicPlayModel.getMusicTimeTotal()));
         mLrcModel.setTimeCurrent(musicPlayModel.getMusicTimeCurrent());
+
+        if(!((musicPlayModel.isLike() && musicLike.isChecked()) || (!musicPlayModel.isLike() && !musicLike.isChecked()))){
+            musicLike.setChecked(musicPlayModel.isLike());
+            if(musicPlayModel.isLike()){
+                onMusicDownLoadClick();
+                YoYo.with(Techniques.Swing).playOn(musicLike);
+            }else {
+                YoYo.with(Techniques.Hinge).playOn(musicLike);
+                deletMusicByName(musicPlayModel.getMusicInfoCurrent().getTitle());
+            }
+        }
 
         if(null != musicPlayModel.getMusicInfoCurrent().getImg() && !musicCoverPre.equals(musicPlayModel.getMusicInfoCurrent().getImg())){
             final Animation fadeInAnimation = AnimationUtils.loadAnimation(this, R.anim.music_bg_fade_in);
@@ -482,7 +609,7 @@ public class MainActivity extends AppCompatActivity implements MusicPlayModel.IM
                 protected void onFailureImpl(DataSource<CloseableReference<CloseableImage>> dataSource) {
 
                 }
-            }, RetrofitClient.netExecutor);
+            }, Constant.executor);
 
             YoYo.with(Techniques.RotateOutUpLeft).duration(200).withListener(new Animator.AnimatorListener() {
                 @Override
@@ -538,83 +665,72 @@ public class MainActivity extends AppCompatActivity implements MusicPlayModel.IM
 
     }
 
-    public void downloadMusic(final String url, final String fileName, final String savePath){
-        final NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(MainActivity.this);
-
-        Observable<Integer> observable = Observable.create(new Observable.OnSubscribe<Integer>() {
+    void downloadFile(final String url, final String fileName, final String savePath,final int type, final boolean retry){
+        final Request request = new Request.Builder().url(url).build();
+        Constant.executor.execute(new Runnable() {
             @Override
-            public void call(Subscriber<? super Integer> subscriber) {
-                Request request = new Request.Builder().url(url).build();
+            public void run() {
                 try {
-                    Response response = RetrofitClient.okHttpClient.newCall(request).execute();
-                    if(response.isSuccessful()){
-                        String mimeType = MimeTypeMap.getFileExtensionFromUrl(url);
-                        File musicFile = new File(savePath + fileName + "." + mimeType);
-                        if(!musicFile.exists()){
-                            if(!musicFile.createNewFile()){
-                                subscriber.onError(new IOException());
-                                return;
+                    Dao songInfoDao = dbHelper.getDBDao(SongInfo.class);
+                    List<SongInfo> songInfos = songInfoDao.queryBuilder().orderBy("time", false).where().eq("tile", fileName).query();
+                    if (null != songInfos && 1 == songInfos.size()) {
+                        Response response = RetrofitClient.okHttpClient.newCall(request).execute();
+                        if (response.isSuccessful()) {
+                            File musicFile = new File(savePath + fileName);
+                            if (!musicFile.exists()) {
+                                if (!musicFile.createNewFile()) {
+                                    return;
+                                }
+                            }
+                            BufferedSink output = Okio.buffer(Okio.sink(musicFile));
+                            BufferedSource input = Okio.buffer(Okio.source(response.body().byteStream()));
+                            byte data[] = new byte[2048];
+
+                            int count;
+                            while ((count = input.read(data)) != -1) {
+                                output.write(data, 0, count);
+                            }
+                            output.flush();
+                            output.close();
+                            input.close();
+                            SongInfo songInfo = songInfos.get(0);
+                            if (type == MUSIC_IMG) {
+                                songInfo.setImg(savePath + fileName);
+                            } else if (type == MUSIC_LRC) {
+                                songInfo.setImg(savePath + fileName);
+                            }
+                            songInfoDao.update(songInfo);
+                        } else {
+                            if (retry) {
+                                downloadFile(url, fileName, savePath, type, false);//如果异常，那么再试一次
                             }
                         }
-                        BufferedSink output = Okio.buffer(Okio.sink(musicFile));
-
-                        BufferedSource input = Okio.buffer(Okio.source(response.body().byteStream()));
-                        long totalByteLength = response.body().contentLength();
-                        byte data[] = new byte[1024];
-
-                        subscriber.onNext(0);
-                        long total = 0;
-                        int count;
-                        while ((count = input.read(data)) != -1) {
-                            total += count;
-                            output.write(data, 0, count);
-                            subscriber.onNext((int) (total * 100 / totalByteLength));
-                        }
-                        output.flush();
-                        output.close();
-                        input.close();
-                        subscriber.onCompleted();
-                    }else {
-                        subscriber.onError(new IOException());
                     }
                 } catch (IOException e) {
                     e.printStackTrace();
-                    subscriber.onError(new IOException());
+                    if (retry) {
+                        downloadFile(url, fileName, savePath, type, false);//如果异常，那么再试一次
+                    }
+                } catch (SQLException e) {
+                    e.printStackTrace();
                 }
             }
-        }).onBackpressureDrop();
+        });
+    }
 
-        Subscriber<Integer> subscriber = new Subscriber<Integer>() {
+    void deletMusicByName(final String songName){
+        Constant.executor.execute(new Runnable(){
             @Override
-            public void onCompleted() {
-                notificationBuilder.setContentTitle(fileName + "下载完毕");
-                mNotifyMgr.notify(DOWNLOAD_NOTIFICATION_ID, notificationBuilder.build());
+            public void run() {
+                try {
+                    Dao dao = dbHelper.getDao(SongInfo.class);
+                    DeleteBuilder deleteBuilder = dao.deleteBuilder();
+                    deleteBuilder.where().eq("title", songName);
+                    deleteBuilder.delete();
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
             }
-
-            @Override
-            public void onError(Throwable e) {
-                e.printStackTrace();
-                notificationBuilder.setContentTitle(fileName + "下载失败");
-                mNotifyMgr.notify(DOWNLOAD_NOTIFICATION_ID, notificationBuilder.build());
-                SuperToast.create(MainActivity.this, fileName + "下载失败", SuperToast.Duration.LONG
-                        , Style.getStyle(Style.RED, SuperToast.Animations.FADE)).show();
-            }
-
-            @Override
-            public void onNext(Integer precentage) {
-                notificationBuilder.setProgress(100, precentage, false);
-                mNotifyMgr.notify(DOWNLOAD_NOTIFICATION_ID, notificationBuilder.build());
-            }
-
-            @Override
-            public void onStart() {
-                notificationBuilder.setSmallIcon(R.drawable.ic_launcher);
-                notificationBuilder.setContentTitle("正在下载" + fileName);
-                mNotifyMgr.notify(DOWNLOAD_NOTIFICATION_ID, notificationBuilder.build());
-            }
-        };
-
-        observable.observeOn(AndroidSchedulers.mainThread()).subscribeOn(Schedulers.from(RetrofitClient.netExecutor))
-                .subscribe(subscriber);
+        });
     }
 }

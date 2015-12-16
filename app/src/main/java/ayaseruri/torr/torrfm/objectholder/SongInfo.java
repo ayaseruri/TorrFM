@@ -1,8 +1,12 @@
 package ayaseruri.torr.torrfm.objectholder;
 
+import com.j256.ormlite.field.DatabaseField;
+import com.j256.ormlite.table.DatabaseTable;
+
 /**
  * Created by ayaseruri on 15/12/11.
  */
+@DatabaseTable
 public class SongInfo {
 
     /**
@@ -17,17 +21,32 @@ public class SongInfo {
      * src : http://ww.danmu.fm:233/aac/1769402184.m4a
      * length : 257
      */
-
+    @DatabaseField(generatedId = true)
+    private int id;
     private int sid;
     private int uid;
+    @DatabaseField
     private String title;
     private String url;
+    @DatabaseField
     private String img;
     private String album_name;
+    @DatabaseField
     private String artist_name;
     private String text;
+    @DatabaseField
     private String src;
     private int length;
+    @DatabaseField
+    private long time;
+
+    public long getTime() {
+        return time;
+    }
+
+    public void setTime(long time) {
+        this.time = time;
+    }
 
     public void setSid(int sid) {
         this.sid = sid;
