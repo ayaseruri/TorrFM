@@ -1,16 +1,33 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:orientation="horizontal" android:layout_width="match_parent"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
     android:layout_height="48dp"
-    android:gravity="center_vertical">
+    android:layout_marginLeft="8dp"
+    android:layout_marginRight="8dp">
+
     <ImageView
         android:id="@+id/music_playing_icon"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:src="@drawable/music_playing"/>
+        android:layout_centerVertical="true"
+        android:layout_marginRight="8dp"
+        android:src="@drawable/music_playing"
+        android:visibility="gone" />
+
     <TextView
         android:id="@+id/music_name"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="音乐名"/>
-</LinearLayout>
+        android:layout_centerVertical="true"
+        android:layout_toRightOf="@+id/music_playing_icon"
+        android:text="音乐名" />
+
+    <ImageView
+        android:id="@+id/music_delete_icon"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentRight="true"
+        android:layout_centerVertical="true"
+        android:src="@drawable/delete_music"
+        android:tint="#55000000"/>
+</RelativeLayout>

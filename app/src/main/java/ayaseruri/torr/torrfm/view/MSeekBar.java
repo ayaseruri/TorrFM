@@ -42,7 +42,7 @@ public class MSeekBar extends SeekBar {
 
     @Override
     public synchronized void setProgress(int progress) {
-        if(isSetProgressEnable){
+        if (isSetProgressEnable) {
             super.setProgress(progress);
         }
     }

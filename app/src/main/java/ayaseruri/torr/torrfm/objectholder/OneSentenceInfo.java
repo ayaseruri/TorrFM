@@ -25,67 +25,67 @@ public class OneSentenceInfo {
     private String catname;
     private long id;
 
-    public void setHitokoto(String hitokoto) {
-        this.hitokoto = hitokoto;
-    }
-
-    public void setCat(String cat) {
-        this.cat = cat;
-    }
-
-    public void setAuthor(String author) {
-        this.author = author;
-    }
-
-    public void setSource(String source) {
-        this.source = source;
-    }
-
-    public void setLike(int like) {
-        this.like = like;
-    }
-
-    public void setDate(String date) {
-        this.date = date;
-    }
-
-    public void setCatname(String catname) {
-        this.catname = catname;
-    }
-
-    public void setId(long id) {
-        this.id = id;
-    }
-
     public String getHitokoto() {
         return hitokoto;
+    }
+
+    public void setHitokoto(String hitokoto) {
+        this.hitokoto = hitokoto;
     }
 
     public String getCat() {
         return cat;
     }
 
+    public void setCat(String cat) {
+        this.cat = cat;
+    }
+
     public String getAuthor() {
         return author;
+    }
+
+    public void setAuthor(String author) {
+        this.author = author;
     }
 
     public String getSource() {
         return source;
     }
 
+    public void setSource(String source) {
+        this.source = source;
+    }
+
     public int getLike() {
         return like;
+    }
+
+    public void setLike(int like) {
+        this.like = like;
     }
 
     public String getDate() {
         return date;
     }
 
+    public void setDate(String date) {
+        this.date = date;
+    }
+
     public String getCatname() {
         return catname;
     }
 
+    public void setCatname(String catname) {
+        this.catname = catname;
+    }
+
     public long getId() {
         return id;
+    }
+
+    public void setId(long id) {
+        this.id = id;
     }
 }

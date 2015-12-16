@@ -7,10 +7,11 @@ import org.androidannotations.annotations.AfterViews;
 import org.androidannotations.annotations.EActivity;
 
 import ayaseruri.torr.torrfm.R;
+
 @EActivity(R.layout.activity_start)
 public class StartActivity extends AppCompatActivity {
     @AfterViews
-    void init(){
+    void init() {
         Intent intent = new Intent(this, MainActivity_.class);
         startActivity(intent);
         finish();

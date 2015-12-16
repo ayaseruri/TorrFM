@@ -1,86 +1,91 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:orientation="vertical"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:gravity="center_vertical">
+    android:gravity="center_vertical"
+    android:orientation="vertical">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="48dp"
+        android:gravity="center"
         android:orientation="horizontal"
         android:paddingLeft="30dp"
-        android:paddingRight="30dp"
-        android:gravity="center">
+        android:paddingRight="30dp">
+
         <LinearLayout
             android:id="@+id/music_like_panel"
             android:layout_width="0dp"
             android:layout_height="48dp"
             android:layout_weight="1"
             android:gravity="center">
-            <CheckBox
+
+            <ayaseruri.torr.torrfm.view.MCheckBox
                 android:id="@+id/music_like"
-                android:button="@null"
                 android:layout_width="32dp"
                 android:layout_height="32dp"
                 android:background="@drawable/music_like_selector"
-                android:checked="false"/>
+                android:button="@null"
+                android:checked="false" />
         </LinearLayout>
+
         <ImageView
             android:id="@+id/music_download"
             android:layout_width="0dp"
             android:layout_height="32dp"
             android:layout_weight="1"
-            android:src="@drawable/music_download"/>
+            android:src="@drawable/music_download" />
+
         <ImageView
             android:id="@+id/music_share"
             android:layout_width="0dp"
             android:layout_height="32dp"
             android:layout_weight="1"
-            android:src="@drawable/share_icon"/>
+            android:src="@drawable/share_icon" />
     </LinearLayout>
-    
+
     <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:paddingLeft="16dp"
         android:paddingRight="16dp">
+
         <TextView
             android:id="@+id/music_current_time"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="00:00"
             android:layout_centerVertical="true"
-            android:textColor="@color/white"/>
+            android:text="00:00"
+            android:textColor="@color/white" />
 
         <ayaseruri.torr.torrfm.view.MSeekBar
             android:id="@+id/music_progress"
-            android:layout_toRightOf="@+id/music_current_time"
-            android:layout_toLeftOf="@+id/music_total_time"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_centerVertical="true"
+            android:layout_toLeftOf="@+id/music_total_time"
+            android:layout_toRightOf="@+id/music_current_time"
             android:maxHeight="2dip"
             android:minHeight="2dip"
             android:progressDrawable="@drawable/music_progress_bar_bg"
-            android:thumb="@drawable/music_progress_bar_thumb"
-            android:layout_centerVertical="true"/>
+            android:thumb="@drawable/music_progress_bar_thumb" />
 
         <TextView
             android:id="@+id/music_total_time"
-            android:layout_alignParentRight="true"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_alignParentRight="true"
             android:layout_centerVertical="true"
-            android:textColor="@color/white"
-            android:text="00:00"/>
+            android:text="00:00"
+            android:textColor="@color/white" />
     </RelativeLayout>
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="80dp"
-        android:orientation="horizontal"
-        android:gravity="center_vertical">
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
 
         <LinearLayout
             android:layout_width="0dp"
@@ -88,12 +93,13 @@
             android:layout_weight="1"
             android:gravity="center"
             android:padding="22dp">
+
             <CheckBox
                 android:id="@+id/music_circulate"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:button="@null"
-                android:background="@drawable/music_circulate_selector" />
+                android:background="@drawable/music_circulate_selector"
+                android:button="@null" />
         </LinearLayout>
 
         <ImageView
@@ -101,19 +107,20 @@
             android:layout_width="0dp"
             android:layout_height="48dp"
             android:layout_weight="1"
-            android:src="@drawable/music_pre"
-            android:scaleType="fitStart"/>
+            android:scaleType="fitStart"
+            android:src="@drawable/music_pre" />
 
         <LinearLayout
             android:layout_width="80dp"
             android:layout_height="80dp"
             android:gravity="center">
+
             <CheckBox
                 android:id="@+id/music_play"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:button="@null"
-                android:background="@drawable/music_play_selector" />
+                android:background="@drawable/music_play_selector"
+                android:button="@null" />
         </LinearLayout>
 
         <ImageView
@@ -121,17 +128,17 @@
             android:layout_width="0dp"
             android:layout_height="48dp"
             android:layout_weight="1"
-            android:src="@drawable/music_next"
-            android:scaleType="fitEnd"/>
+            android:scaleType="fitEnd"
+            android:src="@drawable/music_next" />
 
         <ImageView
             android:id="@+id/music_list"
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1"
-            android:src="@drawable/music_list"
             android:gravity="center"
-            android:padding="22dp"/>
+            android:padding="22dp"
+            android:src="@drawable/music_list" />
 
     </LinearLayout>
 

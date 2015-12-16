@@ -39,6 +39,36 @@ public class SongInfo {
     private int length;
     @DatabaseField
     private long time;
+    @DatabaseField
+    private boolean isDownload = false;
+    @DatabaseField
+    private boolean isLocal = false;
+    @DatabaseField
+    private String lrcPath;
+
+    public String getLrcPath() {
+        return lrcPath;
+    }
+
+    public void setLrcPath(String lrcPath) {
+        this.lrcPath = lrcPath;
+    }
+
+    public boolean isLocal() {
+        return isLocal;
+    }
+
+    public void setIsLocal(boolean isLocal) {
+        this.isLocal = isLocal;
+    }
+
+    public boolean isDownload() {
+        return isDownload;
+    }
+
+    public void setIsDownload(boolean isDownload) {
+        this.isDownload = isDownload;
+    }
 
     public long getTime() {
         return time;
@@ -48,83 +78,83 @@ public class SongInfo {
         this.time = time;
     }
 
-    public void setSid(int sid) {
-        this.sid = sid;
-    }
-
-    public void setUid(int uid) {
-        this.uid = uid;
-    }
-
-    public void setTitle(String title) {
-        this.title = title;
-    }
-
-    public void setUrl(String url) {
-        this.url = url;
-    }
-
-    public void setImg(String img) {
-        this.img = img;
-    }
-
-    public void setAlbum_name(String album_name) {
-        this.album_name = album_name;
-    }
-
-    public void setArtist_name(String artist_name) {
-        this.artist_name = artist_name;
-    }
-
-    public void setText(String text) {
-        this.text = text;
-    }
-
-    public void setSrc(String src) {
-        this.src = src;
-    }
-
-    public void setLength(int length) {
-        this.length = length;
-    }
-
     public int getSid() {
         return sid;
+    }
+
+    public void setSid(int sid) {
+        this.sid = sid;
     }
 
     public int getUid() {
         return uid;
     }
 
+    public void setUid(int uid) {
+        this.uid = uid;
+    }
+
     public String getTitle() {
         return title;
+    }
+
+    public void setTitle(String title) {
+        this.title = title;
     }
 
     public String getUrl() {
         return url;
     }
 
+    public void setUrl(String url) {
+        this.url = url;
+    }
+
     public String getImg() {
         return img;
+    }
+
+    public void setImg(String img) {
+        this.img = img;
     }
 
     public String getAlbum_name() {
         return album_name;
     }
 
+    public void setAlbum_name(String album_name) {
+        this.album_name = album_name;
+    }
+
     public String getArtist_name() {
         return artist_name;
+    }
+
+    public void setArtist_name(String artist_name) {
+        this.artist_name = artist_name;
     }
 
     public String getText() {
         return text;
     }
 
+    public void setText(String text) {
+        this.text = text;
+    }
+
     public String getSrc() {
         return src;
     }
 
+    public void setSrc(String src) {
+        this.src = src;
+    }
+
     public int getLength() {
         return length;
+    }
+
+    public void setLength(int length) {
+        this.length = length;
     }
 }

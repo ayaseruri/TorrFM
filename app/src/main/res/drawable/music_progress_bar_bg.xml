@@ -1,15 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
     <item android:id="@android:id/background">
-             <shape>
-                <solid android:color="@color/white"/>
-            </shape>
+        <shape>
+            <solid android:color="@color/white" />
+        </shape>
     </item>
 
     <item android:id="@android:id/secondaryProgress">
         <clip>
             <shape>
-                <solid android:color="#55000000"/>
+                <solid android:color="#55000000" />
             </shape>
         </clip>
     </item>
@@ -17,7 +17,7 @@
     <item android:id="@android:id/progress">
         <clip>
             <shape>
-                <solid android:color="@color/colorAccent"/>
+                <solid android:color="@color/colorAccent" />
             </shape>
         </clip>
     </item>

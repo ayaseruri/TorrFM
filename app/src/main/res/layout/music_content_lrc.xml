@@ -1,15 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:lrcView="http://schemas.android.com/apk/res-auto"
-    android:orientation="vertical"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
     <ayaseruri.torr.torrfm.view.LrcView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        lrcView:noCurrentColor="#ebebeb"
-        lrcView:noCurrentSize="12sp"
         lrcView:currentColor="@color/colorPrimary"
         lrcView:currentSize="16sp"
-        lrcView:lineSpace="8dp"/>
+        lrcView:lineSpace="8dp"
+        lrcView:noCurrentColor="#ebebeb"
+        lrcView:noCurrentSize="12sp" />
 </LinearLayout>

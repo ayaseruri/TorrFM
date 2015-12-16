@@ -18,7 +18,7 @@ import ayaseruri.torr.torrfm.objectholder.ChannelInfo;
 /**
  * Created by ayaseruri on 15/12/11.
  */
-public class NavigationAdapar extends RecyclerView.Adapter<NavigationAdapar.ViewHolder>{
+public class NavigationAdapar extends RecyclerView.Adapter<NavigationAdapar.ViewHolder> {
     private List<ChannelInfo> mChannelInfos;
     private Context mContext;
     private IItemClick iItemClick;
@@ -36,14 +36,14 @@ public class NavigationAdapar extends RecyclerView.Adapter<NavigationAdapar.View
 
     @Override
     public void onBindViewHolder(ViewHolder holder, final int position) {
-        SimpleDraweeView bg = (SimpleDraweeView)holder.itemView.findViewById(R.id.item_bg);
-        TextView title = (TextView)holder.itemView.findViewById(R.id.title);
+        SimpleDraweeView bg = (SimpleDraweeView) holder.itemView.findViewById(R.id.item_bg);
+        TextView title = (TextView) holder.itemView.findViewById(R.id.title);
 
         ChannelInfo channelInfo = mChannelInfos.get(position);
-        if(null != channelInfo.getImg()){
+        if (null != channelInfo.getImg()) {
             bg.setImageURI(Uri.parse(channelInfo.getImg()));
         }
-        if(null != channelInfo.getTitle()){
+        if (null != channelInfo.getTitle()) {
             title.setText(channelInfo.getTitle());
         }
 
@@ -60,13 +60,13 @@ public class NavigationAdapar extends RecyclerView.Adapter<NavigationAdapar.View
         return mChannelInfos.size();
     }
 
-    public static class ViewHolder extends RecyclerView.ViewHolder{
+    public interface IItemClick {
+        void onItemClick(int postion, ChannelInfo channelInfo);
+    }
+
+    public static class ViewHolder extends RecyclerView.ViewHolder {
         public ViewHolder(View itemView) {
             super(itemView);
         }
-    }
-
-    public interface IItemClick{
-        void onItemClick(int postion, ChannelInfo channelInfo);
     }
 }

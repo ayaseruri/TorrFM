@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <shape xmlns:andoid="http://schemas.android.com/apk/res/android"
     andoid:shape="oval">
-    <solid andoid:color="@color/colorAccent"/>
-    <size andoid:height="8dp" andoid:width="8dp"/>
+    <solid andoid:color="@color/colorAccent" />
+    <size
+        andoid:width="8dp"
+        andoid:height="8dp" />
 </shape>

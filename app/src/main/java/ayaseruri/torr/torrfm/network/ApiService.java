@@ -16,8 +16,10 @@ import rx.Observable;
 public interface ApiService {
     @GET("/x/?channel")
     Observable<List<ChannelInfo>> getChannelInfo();
+
     @GET("/x/?rand")
-    Observable<List<SongInfo>> getRandSong(@Query("hid")String hid);
+    Observable<List<SongInfo>> getRandSong(@Query("hid") String hid);
+
     @GET
     Observable<OneSentenceInfo> getOneSentence(@Url String url);
 }

@@ -57,37 +57,37 @@ public class LrcView extends TextView {
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
 
-        if(null != lrcs && lrcs.size() > 0){
-            float centerVertical = getHeight()/2;
-            float baseLineY = centerVertical - currentSize/2 - lineSpace;
-            for(int i = crrentIndex - 1; i >= 0; i--){
+        if (null != lrcs && lrcs.size() > 0) {
+            float centerVertical = getHeight() / 2;
+            float baseLineY = centerVertical - currentSize / 2 - lineSpace;
+            for (int i = crrentIndex - 1; i >= 0; i--) {
                 canvas.drawText(lrcs.get(i), getWidth() / 2
                         , baseLineY, notCurrentPaint);
-                baseLineY = centerVertical - noCurrentSize/2 - lineSpace;
-                if(baseLineY < 0){
+                baseLineY = centerVertical - noCurrentSize / 2 - lineSpace;
+                if (baseLineY < 0) {
                     break;
                 }
             }
             canvas.drawText(lrcs.get(crrentIndex), getWidth() / 2
-                    , centerVertical + currentSize/2, currentPaint);
+                    , centerVertical + currentSize / 2, currentPaint);
 
-            baseLineY = centerVertical + currentSize/2 + lineSpace + noCurrentSize;
-            for(int i = crrentIndex + 1; i < lrcs.size(); i++){
+            baseLineY = centerVertical + currentSize / 2 + lineSpace + noCurrentSize;
+            for (int i = crrentIndex + 1; i < lrcs.size(); i++) {
                 canvas.drawText(lrcs.get(i), getWidth() / 2
                         , baseLineY, notCurrentPaint);
-                baseLineY = centerVertical - noCurrentSize/2 - lineSpace;
-                if(baseLineY > getHeight()){
+                baseLineY = centerVertical - noCurrentSize / 2 - lineSpace;
+                if (baseLineY > getHeight()) {
                     break;
                 }
             }
         }
     }
 
-    public void setCurrentIndex(int index){
+    public void setCurrentIndex(int index) {
         this.crrentIndex = index;
     }
 
-    public void setLrcs(List<String> lrcs){
+    public void setLrcs(List<String> lrcs) {
         this.lrcs = lrcs;
     }
 }

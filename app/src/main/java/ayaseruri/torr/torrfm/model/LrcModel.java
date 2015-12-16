@@ -14,7 +14,7 @@ public class LrcModel {
         iLrcs = new ArrayList<>();
     }
 
-    public void addILrc(ILrc iLrc){
+    public void addILrc(ILrc iLrc) {
         this.iLrcs.add(iLrc);
     }
 
@@ -27,13 +27,13 @@ public class LrcModel {
         update();
     }
 
-    private void update(){
-        for(ILrc iLrc : iLrcs){
+    private void update() {
+        for (ILrc iLrc : iLrcs) {
             iLrc.onMusicTimeCurrentChange(this);
         }
     }
 
-    public interface ILrc{
+    public interface ILrc {
         void onMusicTimeCurrentChange(LrcModel lrcModel);
     }
 }

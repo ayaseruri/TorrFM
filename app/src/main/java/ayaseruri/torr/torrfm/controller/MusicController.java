@@ -45,21 +45,21 @@ public class MusicController implements MediaPlayer.OnBufferingUpdateListener, M
         mTimer.schedule(new TimerTask() {
             @Override
             public void run() {
-                if(mediaPlayer.isPlaying()){
+                if (mediaPlayer.isPlaying()) {
                     musicPlayModel.setMusicTimeCurrent(mediaPlayer.getCurrentPosition());
                 }
             }
         }, 0, 1000);
     }
 
-    public void play(){
+    public void play() {
         musicPlayModel.setIsMusicPlaying(true);
         mediaPlayer.start();
     }
 
-    public void preparePlay(){
+    public void preparePlay() {
         checkIsLike();
-        if(null != musicPlayModel.getMusicInfoCurrent().getUrl()){
+        if (null != musicPlayModel.getMusicInfoCurrent().getSrc()) {
             try {
                 mediaPlayer.reset();
                 mediaPlayer.setDataSource(musicPlayModel.getMusicInfoCurrent().getSrc());
@@ -68,41 +68,41 @@ public class MusicController implements MediaPlayer.OnBufferingUpdateListener, M
                 e.printStackTrace();
                 SuperToast.create(mContext, "歌曲信息出错", SuperToast.Duration.LONG, Style.getStyle(Style.RED, SuperToast.Animations.FADE)).show();
             }
-        }else {
+        } else {
             SuperToast.create(mContext, "歌曲信息出错", SuperToast.Duration.LONG, Style.getStyle(Style.RED, SuperToast.Animations.FADE)).show();
         }
     }
 
-    public void pause(){
+    public void pause() {
         musicPlayModel.setIsMusicPlaying(false);
         mediaPlayer.pause();
     }
 
-    public void pre(){
+    public void pre() {
         musicPlayModel.setMusicIndexCurrent(musicPlayModel.getMusicIndexCurrent() - 1);
         preparePlay();
-        if(musicPlayModel.isMusicPlaying()){
+        if (musicPlayModel.isMusicPlaying()) {
             play();
-        }else {
+        } else {
             pause();
         }
     }
 
-    public void next(){
+    public void next() {
         musicPlayModel.setMusicIndexCurrent(musicPlayModel.getMusicIndexCurrent() + 1);
         preparePlay();
-        if(musicPlayModel.isMusicPlaying()){
+        if (musicPlayModel.isMusicPlaying()) {
             play();
-        }else {
+        } else {
             pause();
         }
     }
 
-    public void setMusicTimeCurrent(int percentage){
+    public void setMusicTimeCurrent(int percentage) {
         musicPlayModel.setMusicTimeCurrent(percentage / 100 * musicPlayModel.getMusicTimeTotal());
     }
 
-    public void seekTo(){
+    public void seekTo() {
         mediaPlayer.seekTo(musicPlayModel.getMusicTimeCurrent());
     }
 
@@ -114,7 +114,7 @@ public class MusicController implements MediaPlayer.OnBufferingUpdateListener, M
     @Override
     public void onPrepared(MediaPlayer mp) {
         musicPlayModel.setMusicTimeTotal(mp.getDuration());
-        if(musicPlayModel.isMusicPlaying()){
+        if (musicPlayModel.isMusicPlaying()) {
             play();
         }
         //为什么这里直接调用pause方法会直接触发media.onCompletion
@@ -125,24 +125,24 @@ public class MusicController implements MediaPlayer.OnBufferingUpdateListener, M
 
     }
 
-    public void like(){
+    public void like() {
         musicPlayModel.setIsLike(true);
     }
 
-    public void dislike(){
+    public void dislike() {
         musicPlayModel.setIsLike(false);
     }
 
-    private void checkIsLike(){
+    private void checkIsLike() {
         Constant.executor.execute(new Runnable() {
             @Override
             public void run() {
                 try {
                     Dao songInfoDao = dbHelper.getDBDao(SongInfo.class);
                     List<SongInfo> songInfos = songInfoDao.queryBuilder().where().eq("title", musicPlayModel.getMusicInfoCurrent().getTitle()).query();
-                    if(null != songInfos && songInfos.size() > 0){
+                    if (null != songInfos && songInfos.size() > 0) {
                         musicPlayModel.setIsLike(true);
-                    }else {
+                    } else {
                         musicPlayModel.setIsLike(false);
                     }
                 } catch (SQLException e) {

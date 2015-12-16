@@ -13,6 +13,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import ayaseruri.torr.torrfm.objectholder.ChannelInfo;
+import ayaseruri.torr.torrfm.objectholder.SongInfo;
 
 /**
  * Created by ayaseruri on 15/12/14.
@@ -29,8 +30,8 @@ public class DBHelper extends OrmLiteSqliteOpenHelper {
         super(context, DATABASE_NAME, null, DATABASE_VERSION);
     }
 
-    public static synchronized DBHelper getInstance(Context context){
-        if(null == instance){
+    public static synchronized DBHelper getInstance(Context context) {
+        if (null == instance) {
             instance = new DBHelper(context.getApplicationContext());
         }
         return instance;
@@ -40,6 +41,7 @@ public class DBHelper extends OrmLiteSqliteOpenHelper {
     public void onCreate(SQLiteDatabase database, ConnectionSource connectionSource) {
         try {
             TableUtils.createTable(connectionSource, ChannelInfo.class);
+            TableUtils.createTable(connectionSource, SongInfo.class);
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -49,6 +51,7 @@ public class DBHelper extends OrmLiteSqliteOpenHelper {
     public void onUpgrade(SQLiteDatabase database, ConnectionSource connectionSource, int oldVersion, int newVersion) {
         try {
             TableUtils.dropTable(connectionSource, ChannelInfo.class, true);
+            TableUtils.dropTable(connectionSource, SongInfo.class, true);
             onCreate(database, connectionSource);
         } catch (SQLException e) {
             e.printStackTrace();
@@ -61,7 +64,7 @@ public class DBHelper extends OrmLiteSqliteOpenHelper {
         if (!daos.containsKey(className)) {
             dao = super.getDao(clazz);
             daos.put(className, dao);
-        }else {
+        } else {
             dao = daos.get(className);
         }
         return dao;

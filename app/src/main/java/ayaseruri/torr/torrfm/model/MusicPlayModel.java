@@ -73,11 +73,11 @@ public class MusicPlayModel {
     }
 
     public void setMusicIndexCurrent(int indexCurrent) {
-        if(indexCurrent < 0){
+        if (indexCurrent < 0) {
             musicIndexCurrent = songInfos.size() - 1;
-        }else if(indexCurrent >= songInfos.size()){
+        } else if (indexCurrent >= songInfos.size()) {
             musicIndexCurrent = 0;
-        }else {
+        } else {
             this.musicIndexCurrent = indexCurrent;
         }
         update();
@@ -105,13 +105,13 @@ public class MusicPlayModel {
         update();
     }
 
-    private void update(){
-        for(IMusicPlay iMusicPlay : iMusicPlays){
+    private void update() {
+        for (IMusicPlay iMusicPlay : iMusicPlays) {
             iMusicPlay.onMusicPlayStateChange(this);
         }
     }
 
-    public interface IMusicPlay{
+    public interface IMusicPlay {
         void onMusicPlayStateChange(MusicPlayModel musicPlayModel);
     }
 }
