@@ -99,7 +99,7 @@ public class MusicController implements MediaPlayer.OnBufferingUpdateListener, M
     }
 
     public void setMusicTimeCurrent(int percentage) {
-        musicPlayModel.setMusicTimeCurrent(percentage / 100 * musicPlayModel.getMusicTimeTotal());
+        musicPlayModel.setMusicTimeCurrent((int)(percentage / 100.0f * musicPlayModel.getMusicTimeTotal()));
     }
 
     public void seekTo() {

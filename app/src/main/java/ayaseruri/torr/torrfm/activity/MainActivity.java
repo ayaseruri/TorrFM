@@ -55,6 +55,7 @@ import org.androidannotations.annotations.Click;
 import org.androidannotations.annotations.EActivity;
 import org.androidannotations.annotations.UiThread;
 import org.androidannotations.annotations.ViewById;
+import org.androidannotations.annotations.sharedpreferences.Pref;
 
 import java.io.File;
 import java.io.IOException;
@@ -68,6 +69,7 @@ import ayaseruri.torr.torrfm.adaptar.MusicContentAdaptar;
 import ayaseruri.torr.torrfm.adaptar.NavigationAdapar;
 import ayaseruri.torr.torrfm.controller.MusicController;
 import ayaseruri.torr.torrfm.db.DBHelper;
+import ayaseruri.torr.torrfm.db.SettingPrefs_;
 import ayaseruri.torr.torrfm.global.Constant;
 import ayaseruri.torr.torrfm.model.LrcModel;
 import ayaseruri.torr.torrfm.model.MusicPlayModel;
@@ -121,6 +123,10 @@ public class MainActivity extends AppCompatActivity implements MusicPlayModel.IM
     TextView subTitle;
     @ViewById(R.id.music_like)
     MCheckBox musicLike;
+
+    @Pref
+    SettingPrefs_ settingPrefs;
+
     private MusicPlayModel musicPlayModel;
     private MusicController musicController;
     private LrcModel mLrcModel;
@@ -163,9 +169,7 @@ public class MainActivity extends AppCompatActivity implements MusicPlayModel.IM
         musicPorgress.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                if (fromUser) {
-                    musicController.setMusicTimeCurrent(progress);
-                }
+
             }
 
             @Override
@@ -175,6 +179,7 @@ public class MainActivity extends AppCompatActivity implements MusicPlayModel.IM
 
             @Override
             public void onStopTrackingTouch(SeekBar seekBar) {
+                musicController.setMusicTimeCurrent(seekBar.getProgress());
                 musicController.seekTo();
             }
         });
@@ -195,8 +200,8 @@ public class MainActivity extends AppCompatActivity implements MusicPlayModel.IM
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                 if (isChecked) {
                     musicController.like();
-                    onMusicDownLoadClick();
                     YoYo.with(Techniques.Swing).playOn(musicLike);
+                    onMusicDownLoadClick();
                     //经过验证这里面也是主线程
                 } else {
                     musicController.dislike();
@@ -276,6 +281,14 @@ public class MainActivity extends AppCompatActivity implements MusicPlayModel.IM
                                         , SuperToast.Duration.LONG
                                         , Style.getStyle(Style.RED, SuperToast.Animations.FADE)).show();
                             }
+                        }
+
+                        @Override
+                        public void onStart() {
+                            SuperToast.create(MainActivity.this
+                                    , "开始缓存音乐:" + musicPlayModel.getMusicInfoCurrent().getTitle()
+                                    , SuperToast.Duration.LONG
+                                    , Style.getStyle(Style.RED, SuperToast.Animations.FADE)).show();
                         }
                     });
         } else {
@@ -382,25 +395,28 @@ public class MainActivity extends AppCompatActivity implements MusicPlayModel.IM
 
                     @Override
                     public void onCompleted() {
-
+                        if (progressDialog.isShowing()) {
+                            progressDialog.dismiss();
+                        }
                     }
 
                     @Override
                     public void onError(Throwable e) {
-
+                        if (progressDialog.isShowing()) {
+                            progressDialog.changeAlertType(SweetAlertDialog.ERROR_TYPE);
+                            progressDialog.setTitleText("生成随机音乐歌单失败");
+                            progressDialog.setContentText("请从左边频道中选择分类以重新生成歌单");
+                            mainDrawer.openDrawer(Gravity.LEFT);
+                        }
                     }
 
                     @Override
                     public void onNext(List<SongInfo> songInfos) {
-                        if (progressDialog.isShowing()) {
-                            progressDialog.dismiss();
-                        }
                         musicPlayModel.setSongInfos(songInfos);
                         musicController.preparePlay();
                     }
                 });
     }
-
 
     @Override
     @UiThread
@@ -559,7 +575,6 @@ public class MainActivity extends AppCompatActivity implements MusicPlayModel.IM
                             }
                         }
                         output = Okio.buffer(Okio.sink(file));
-
                         input = Okio.buffer(Okio.source(response.body().byteStream()));
                         long totalByteLength = response.body().contentLength();
                         byte data[] = new byte[2048];
@@ -690,23 +705,6 @@ public class MainActivity extends AppCompatActivity implements MusicPlayModel.IM
             public void call(Subscriber<? super String> subscriber) {
                 try {
                     Dao dao = dbHelper.getDao(SongInfo.class);
-                    List<SongInfo> songInfos = (List<SongInfo>)dao.queryBuilder().where().eq("title", songName).query();
-                    if(null != songInfos && songInfos.size() > 0){
-                        for(SongInfo songInfo : songInfos){
-                            File file = new File(songInfo.getSrc());
-                            if(file.exists()){
-                                file.delete();
-                            }
-                            file = new File(songInfo.getImg());
-                            if(file.exists()){
-                                file.delete();
-                            }
-                            file = new File(songInfo.getLrcPath());
-                            if(file.exists()){
-                                file.delete();
-                            }
-                        }
-                    }
                     DeleteBuilder deleteBuilder = dao.deleteBuilder();
                     deleteBuilder.where().eq("title", songName);
                     deleteBuilder.delete();
@@ -738,17 +736,35 @@ public class MainActivity extends AppCompatActivity implements MusicPlayModel.IM
     @Override
     public void onFavouriteSongsItemClick(List<SongInfo> songInfos, int postion) {
         musicController.pause();
+        boolean isAutoPlay = musicPlayModel.isMusicPlaying();
         musicPlayModel.setSongInfos(songInfos);
         musicPlayModel.setMusicIndexCurrent(postion);
         musicController.preparePlay();
+        if(isAutoPlay){
+            musicController.play();
+        }
     }
 
     @Override
-    public void onFavouriteSongsItemDelete(List<SongInfo> songInfos, int postion) {
-        if(musicPlayModel.getMusicInfoCurrent().isDownload() && musicPlayModel.getMusicIndexCurrent() == postion){
-            musicController.pause();
-            musicController.next();
-        }
-        deletMusicByName(songInfos.get(postion).getTitle());
+    public void onFavouriteSongsItemDelete(final List<SongInfo> songInfos, final int postion) {
+        SweetAlertDialog sweetAlertDialog = new SweetAlertDialog(this, SweetAlertDialog.WARNING_TYPE);
+        sweetAlertDialog.setTitleText("提示");
+        sweetAlertDialog.setContentText("确定要从列表中删除:" + songInfos.get(postion).getTitle() + "?");
+        sweetAlertDialog.setConfirmText("删除");
+        sweetAlertDialog.setConfirmClickListener(new SweetAlertDialog.OnSweetClickListener() {
+            @Override
+            public void onClick(SweetAlertDialog sweetAlertDialog) {
+                if(musicPlayModel.getMusicInfoCurrent().isDownload() && musicPlayModel.getMusicIndexCurrent() == postion){
+                    boolean isAutoPlay = musicPlayModel.isMusicPlaying();
+                    musicController.pause();
+                    musicController.next();
+                    if(isAutoPlay){
+                        musicController.play();
+                    }
+                }
+                deletMusicByName(songInfos.get(postion).getTitle());
+            }
+        });
+        sweetAlertDialog.setCancelText("取消");
     }
 }
