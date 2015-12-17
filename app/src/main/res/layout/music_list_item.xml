@@ -20,6 +20,7 @@
         android:layout_height="wrap_content"
         android:layout_centerVertical="true"
         android:layout_toRightOf="@+id/music_playing_icon"
+        android:textColor="@color/favouriteSongsDialogTextColor"
         android:text="音乐名" />
 
     <ImageView

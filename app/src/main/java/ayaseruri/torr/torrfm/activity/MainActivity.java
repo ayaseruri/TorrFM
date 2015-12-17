@@ -21,6 +21,7 @@ import android.view.animation.AnimationUtils;
 import android.webkit.MimeTypeMap;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
+import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.SeekBar;
 import android.widget.TextView;
@@ -123,6 +124,8 @@ public class MainActivity extends AppCompatActivity implements MusicPlayModel.IM
     TextView subTitle;
     @ViewById(R.id.music_like)
     MCheckBox musicLike;
+    @ViewById(R.id.music_content_root)
+    FrameLayout musicContentRoot;
 
     @Pref
     SettingPrefs_ settingPrefs;
@@ -231,7 +234,7 @@ public class MainActivity extends AppCompatActivity implements MusicPlayModel.IM
 
     @Click(R.id.music_list)
     void onMusicList() {
-        FavouriteSongsDialog favouriteSongsDialog = new FavouriteSongsDialog(this, this);
+        FavouriteSongsDialog favouriteSongsDialog = new FavouriteSongsDialog(this, musicContentRoot, this);
         favouriteSongsDialog.show();
     }
 
@@ -296,126 +299,6 @@ public class MainActivity extends AppCompatActivity implements MusicPlayModel.IM
                     , SuperToast.Duration.LONG
                     , Style.getStyle(Style.RED, SuperToast.Animations.FADE)).show();
         }
-    }
-
-    void initDrawer() {
-        RetrofitClient.apiService.getChannelInfo()
-                .subscribeOn(Schedulers.from(Constant.executor))
-                .observeOn(Schedulers.from(Constant.executor))
-                .map(new Func1<List<ChannelInfo>, List<ChannelInfo>>() {
-                    @Override
-                    public List<ChannelInfo> call(List<ChannelInfo> channelInfos) {
-                        Dao channelDao = null;
-                        try {
-                            channelDao = dbHelper.getDBDao(ChannelInfo.class);
-                        } catch (SQLException e) {
-                            e.printStackTrace();
-                        }
-
-                        if (null != channelDao) {
-                            for (ChannelInfo channelInfo : channelInfos) {
-                                try {
-                                    channelDao.createOrUpdate(channelInfo);
-                                } catch (SQLException e) {
-                                    e.printStackTrace();
-                                }
-                            }
-                        }
-                        return channelInfos;
-                    }
-                })
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(new Subscriber<List<ChannelInfo>>() {
-                    @Override
-                    public void onCompleted() {
-
-                    }
-
-                    @Override
-                    public void onError(Throwable e) {
-                        SuperToast.create(MainActivity.this, "音乐分类初始化失败"
-                                , SuperToast.Duration.LONG, Style.getStyle(Style.RED, SuperToast.Animations.FADE)).show();
-                    }
-
-                    @Override
-                    public void onNext(List<ChannelInfo> channelInfos) {
-                        initNavigationRecycler(channelInfos);
-                    }
-
-                    @Override
-                    public void onStart() {
-                        Dao channelDao = null;
-                        try {
-                            channelDao = dbHelper.getDBDao(ChannelInfo.class);
-                        } catch (SQLException e) {
-                            e.printStackTrace();
-                        }
-
-                        if (null != channelDao) {
-                            try {
-                                List<ChannelInfo> channelInfos = channelDao.queryForAll();
-                                initNavigationRecycler(channelInfos);
-                            } catch (SQLException e) {
-                                e.printStackTrace();
-                            }
-                        }
-                    }
-                });
-    }
-
-    void initNavigationRecycler(List<ChannelInfo> channelInfos) {
-        NavigationAdapar navigationAdapar = new NavigationAdapar(this, channelInfos, new NavigationAdapar.IItemClick() {
-            @Override
-            public void onItemClick(int postion, ChannelInfo channelInfo) {
-                onNavigationItemClick(postion, channelInfo);
-            }
-        });
-        navigationRecycler.setLayoutManager(new LinearLayoutManager(this));
-        navigationRecycler.setAdapter(navigationAdapar);
-    }
-
-    void onNavigationItemClick(int postion, ChannelInfo channelInfo) {
-        if (mainDrawer.isDrawerOpen(Gravity.LEFT)) {
-            mainDrawer.closeDrawers();
-        }
-        getRandSongList(channelInfo.getHid());
-    }
-
-    void getRandSongList(String hid) {
-        final SweetAlertDialog progressDialog = new SweetAlertDialog(MainActivity.this, SweetAlertDialog.PROGRESS_TYPE);
-        progressDialog.setCancelable(false);
-        progressDialog.setTitleText("正在拉取歌单…");
-        RetrofitClient.apiService.getRandSong(hid).observeOn(AndroidSchedulers.mainThread())
-                .subscribeOn(Schedulers.from(Constant.executor))
-                .subscribe(new Subscriber<List<SongInfo>>() {
-                    @Override
-                    public void onStart() {
-                        progressDialog.show();
-                    }
-
-                    @Override
-                    public void onCompleted() {
-                        if (progressDialog.isShowing()) {
-                            progressDialog.dismiss();
-                        }
-                    }
-
-                    @Override
-                    public void onError(Throwable e) {
-                        if (progressDialog.isShowing()) {
-                            progressDialog.changeAlertType(SweetAlertDialog.ERROR_TYPE);
-                            progressDialog.setTitleText("生成随机音乐歌单失败");
-                            progressDialog.setContentText("请从左边频道中选择分类以重新生成歌单");
-                            mainDrawer.openDrawer(Gravity.LEFT);
-                        }
-                    }
-
-                    @Override
-                    public void onNext(List<SongInfo> songInfos) {
-                        musicPlayModel.setSongInfos(songInfos);
-                        musicController.preparePlay();
-                    }
-                });
     }
 
     @Override
@@ -552,6 +435,41 @@ public class MainActivity extends AppCompatActivity implements MusicPlayModel.IM
     @Override
     public void onMusicTimeCurrentChange(LrcModel lrcModel) {
 
+    }
+
+    @Override
+    public void onFavouriteSongsItemClick(List<SongInfo> songInfos, int postion) {
+        musicController.pause();
+        boolean isAutoPlay = musicPlayModel.isMusicPlaying();
+        musicPlayModel.setSongInfos(songInfos);
+        musicPlayModel.setMusicIndexCurrent(postion);
+        musicController.preparePlay();
+        if(isAutoPlay){
+            musicController.play();
+        }
+    }
+
+    @Override
+    public void onFavouriteSongsItemDelete(final List<SongInfo> songInfos, final int postion) {
+        SweetAlertDialog sweetAlertDialog = new SweetAlertDialog(this, SweetAlertDialog.WARNING_TYPE);
+        sweetAlertDialog.setTitleText("提示");
+        sweetAlertDialog.setContentText("确定要从列表中删除:" + songInfos.get(postion).getTitle() + "?");
+        sweetAlertDialog.setConfirmText("删除");
+        sweetAlertDialog.setConfirmClickListener(new SweetAlertDialog.OnSweetClickListener() {
+            @Override
+            public void onClick(SweetAlertDialog sweetAlertDialog) {
+                if(musicPlayModel.getMusicInfoCurrent().isDownload() && musicPlayModel.getMusicIndexCurrent() == postion){
+                    boolean isAutoPlay = musicPlayModel.isMusicPlaying();
+                    musicController.pause();
+                    musicController.next();
+                    if(isAutoPlay){
+                        musicController.play();
+                    }
+                }
+                deletMusicByName(songInfos.get(postion).getTitle());
+            }
+        });
+        sweetAlertDialog.setCancelText("取消");
     }
 
     void downloadMusic(final String savePath) {
@@ -715,56 +633,141 @@ public class MainActivity extends AppCompatActivity implements MusicPlayModel.IM
                 }
             }
         })
-        .subscribeOn(Schedulers.from(Constant.executor))
-        .observeOn(AndroidSchedulers.mainThread())
-        .subscribe(new Action1<String>() {
-            @Override
-            public void call(String s) {
+                .subscribeOn(Schedulers.from(Constant.executor))
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(new Action1<String>() {
+                    @Override
+                    public void call(String s) {
 
-            }
-        }, new Action1<Throwable>() {
-            @Override
-            public void call(Throwable throwable) {
-                SuperToast.create(MainActivity.this
-                        , "删除歌曲失败"
-                        , SuperToast.Duration.LONG
-                        , Style.getStyle(Style.RED, SuperToast.Animations.FADE)).show();
-            }
-        });
-    }
-
-    @Override
-    public void onFavouriteSongsItemClick(List<SongInfo> songInfos, int postion) {
-        musicController.pause();
-        boolean isAutoPlay = musicPlayModel.isMusicPlaying();
-        musicPlayModel.setSongInfos(songInfos);
-        musicPlayModel.setMusicIndexCurrent(postion);
-        musicController.preparePlay();
-        if(isAutoPlay){
-            musicController.play();
-        }
-    }
-
-    @Override
-    public void onFavouriteSongsItemDelete(final List<SongInfo> songInfos, final int postion) {
-        SweetAlertDialog sweetAlertDialog = new SweetAlertDialog(this, SweetAlertDialog.WARNING_TYPE);
-        sweetAlertDialog.setTitleText("提示");
-        sweetAlertDialog.setContentText("确定要从列表中删除:" + songInfos.get(postion).getTitle() + "?");
-        sweetAlertDialog.setConfirmText("删除");
-        sweetAlertDialog.setConfirmClickListener(new SweetAlertDialog.OnSweetClickListener() {
-            @Override
-            public void onClick(SweetAlertDialog sweetAlertDialog) {
-                if(musicPlayModel.getMusicInfoCurrent().isDownload() && musicPlayModel.getMusicIndexCurrent() == postion){
-                    boolean isAutoPlay = musicPlayModel.isMusicPlaying();
-                    musicController.pause();
-                    musicController.next();
-                    if(isAutoPlay){
-                        musicController.play();
                     }
-                }
-                deletMusicByName(songInfos.get(postion).getTitle());
+                }, new Action1<Throwable>() {
+                    @Override
+                    public void call(Throwable throwable) {
+                        SuperToast.create(MainActivity.this
+                                , "删除歌曲失败"
+                                , SuperToast.Duration.LONG
+                                , Style.getStyle(Style.RED, SuperToast.Animations.FADE)).show();
+                    }
+                });
+    }
+
+    void initDrawer() {
+        RetrofitClient.apiService.getChannelInfo()
+                .subscribeOn(Schedulers.from(Constant.executor))
+                .observeOn(Schedulers.from(Constant.executor))
+                .map(new Func1<List<ChannelInfo>, List<ChannelInfo>>() {
+                    @Override
+                    public List<ChannelInfo> call(List<ChannelInfo> channelInfos) {
+                        Dao channelDao = null;
+                        try {
+                            channelDao = dbHelper.getDBDao(ChannelInfo.class);
+                        } catch (SQLException e) {
+                            e.printStackTrace();
+                        }
+
+                        if (null != channelDao) {
+                            for (ChannelInfo channelInfo : channelInfos) {
+                                try {
+                                    channelDao.createOrUpdate(channelInfo);
+                                } catch (SQLException e) {
+                                    e.printStackTrace();
+                                }
+                            }
+                        }
+                        return channelInfos;
+                    }
+                })
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(new Subscriber<List<ChannelInfo>>() {
+                    @Override
+                    public void onCompleted() {
+
+                    }
+
+                    @Override
+                    public void onError(Throwable e) {
+                        SuperToast.create(MainActivity.this, "音乐分类初始化失败"
+                                , SuperToast.Duration.LONG, Style.getStyle(Style.RED, SuperToast.Animations.FADE)).show();
+                    }
+
+                    @Override
+                    public void onNext(List<ChannelInfo> channelInfos) {
+                        initNavigationRecycler(channelInfos);
+                    }
+
+                    @Override
+                    public void onStart() {
+                        Dao channelDao = null;
+                        try {
+                            channelDao = dbHelper.getDBDao(ChannelInfo.class);
+                        } catch (SQLException e) {
+                            e.printStackTrace();
+                        }
+
+                        if (null != channelDao) {
+                            try {
+                                List<ChannelInfo> channelInfos = channelDao.queryForAll();
+                                initNavigationRecycler(channelInfos);
+                            } catch (SQLException e) {
+                                e.printStackTrace();
+                            }
+                        }
+                    }
+                });
+    }
+
+    void initNavigationRecycler(List<ChannelInfo> channelInfos) {
+        NavigationAdapar navigationAdapar = new NavigationAdapar(this, channelInfos, new NavigationAdapar.IItemClick() {
+            @Override
+            public void onItemClick(int postion, ChannelInfo channelInfo) {
+                onNavigationItemClick(postion, channelInfo);
             }
         });
-        sweetAlertDialog.setCancelText("取消");
+        navigationRecycler.setLayoutManager(new LinearLayoutManager(this));
+        navigationRecycler.setAdapter(navigationAdapar);
+    }
+
+    void onNavigationItemClick(int postion, ChannelInfo channelInfo) {
+        if (mainDrawer.isDrawerOpen(Gravity.LEFT)) {
+            mainDrawer.closeDrawers();
+        }
+        getRandSongList(channelInfo.getHid());
+    }
+
+    void getRandSongList(String hid) {
+        final SweetAlertDialog progressDialog = new SweetAlertDialog(MainActivity.this, SweetAlertDialog.PROGRESS_TYPE);
+        progressDialog.setCancelable(false);
+        progressDialog.setTitleText("正在拉取歌单…");
+        RetrofitClient.apiService.getRandSong(hid).observeOn(AndroidSchedulers.mainThread())
+                .subscribeOn(Schedulers.from(Constant.executor))
+                .subscribe(new Subscriber<List<SongInfo>>() {
+                    @Override
+                    public void onStart() {
+                        progressDialog.show();
+                    }
+
+                    @Override
+                    public void onCompleted() {
+                        if (progressDialog.isShowing()) {
+                            progressDialog.dismiss();
+                        }
+                    }
+
+                    @Override
+                    public void onError(Throwable e) {
+                        if (progressDialog.isShowing()) {
+                            progressDialog.changeAlertType(SweetAlertDialog.ERROR_TYPE);
+                            progressDialog.setTitleText("生成随机音乐歌单失败");
+                            progressDialog.setContentText("请从左边频道中选择分类以重新生成歌单");
+                            mainDrawer.openDrawer(Gravity.LEFT);
+                        }
+                    }
+
+                    @Override
+                    public void onNext(List<SongInfo> songInfos) {
+                        musicPlayModel.setSongInfos(songInfos);
+                        musicController.preparePlay();
+                    }
+                });
     }
 }

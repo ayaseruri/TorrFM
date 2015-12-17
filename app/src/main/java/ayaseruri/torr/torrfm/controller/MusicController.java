@@ -54,6 +54,13 @@ public class MusicController implements MediaPlayer.OnBufferingUpdateListener, M
 
     public void play() {
         musicPlayModel.setIsMusicPlaying(true);
+        for(int i=0; i < musicPlayModel.getSongInfos().size(); i++){
+            if(i == musicPlayModel.getMusicIndexCurrent()){
+                musicPlayModel.getSongInfos().get(i).setIsPlaying(true);
+            }else {
+                musicPlayModel.getSongInfos().get(i).setIsPlaying(false);
+            }
+        }
         mediaPlayer.start();
     }
 

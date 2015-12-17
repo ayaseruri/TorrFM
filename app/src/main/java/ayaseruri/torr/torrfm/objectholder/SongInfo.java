@@ -45,6 +45,15 @@ public class SongInfo {
     private boolean isLocal = false;
     @DatabaseField
     private String lrcPath;
+    private boolean isPlaying = false;
+
+    public boolean isPlaying() {
+        return isPlaying;
+    }
+
+    public void setIsPlaying(boolean isPlaying) {
+        this.isPlaying = isPlaying;
+    }
 
     public String getLrcPath() {
         return lrcPath;

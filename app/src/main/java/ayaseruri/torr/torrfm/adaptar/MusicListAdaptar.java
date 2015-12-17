@@ -1,6 +1,7 @@
 package ayaseruri.torr.torrfm.adaptar;
 
 import android.content.Context;
+import android.graphics.Color;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -50,6 +51,18 @@ public class MusicListAdaptar extends RecyclerView.Adapter<MusicListAdaptar.View
                 iItemAction.onItemClick(position, mSongInfos.get(position));
             }
         });
+        ImageView nowPlaying = (ImageView)holder.itemView.findViewById(R.id.music_playing_icon);
+
+        if(mSongInfos.get(position).isPlaying()){
+            nowPlaying.setVisibility(View.VISIBLE);
+            nowPlaying.setColorFilter(R.color.colorAccent);
+            musicName.setTextColor(mContext.getResources().getColor(R.color.colorAccent));
+            musicDelete.setColorFilter(R.color.colorAccent);
+        }else {
+            nowPlaying.setVisibility(View.GONE);
+            musicName.setTextColor(mContext.getResources().getColor(R.color.favouriteSongsDialogTextColor));
+            musicDelete.setColorFilter(Color.parseColor("#55000000"));
+        }
     }
 
     @Override
