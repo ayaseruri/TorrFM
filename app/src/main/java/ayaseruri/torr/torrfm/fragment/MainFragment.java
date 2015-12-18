@@ -732,5 +732,9 @@ public class MainFragment extends Fragment implements MusicPlayModel.IMusicPlay
                     }
                 });
     }
+
+    public void openDrawer(){
+        mainDrawer.openDrawer(Gravity.LEFT);
+    }
 }
 

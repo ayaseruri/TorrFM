@@ -26,29 +26,57 @@
         android:layout_height="wrap_content"
         android:background="@android:color/transparent"
         android:minHeight="?attr/actionBarSize"
-        android:fitsSystemWindows="true"
-        app:navigationIcon="@drawable/navigation_icon">
+        android:fitsSystemWindows="true" >
 
-        <LinearLayout
-            android:layout_width="wrap_content"
-            android:layout_height="match_parent"
-            android:orientation="vertical">
+        <FrameLayout
+            android:layout_marginRight="16dp"
+            android:layout_width="match_parent"
+            android:layout_height="?attr/actionBarSize">
 
-            <TextView
-                android:id="@+id/title"
-                style="@style/TextAppearance.AppCompat.Widget.ActionBar.Title"
+            <org.liuyichen.dribsearch.DribSearchView
+                android:id="@+id/searchView"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:paddingTop="18dp"
+                android:paddingBottom="18dp"
+                app:breadth="2"
+                app:search_color="#fff"/>
+
+            <EditText
+                android:id="@+id/search_edit"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_marginLeft="8dp"
+                android:layout_marginBottom="20dp"
+                android:layout_marginRight="30dp"
+                android:visibility="gone"
+                android:gravity="center_vertical"
+                android:background="@null"/>
+
+            <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="@string/app_name"
-                android:textColor="@color/white" />
+                android:orientation="vertical"
+                android:layout_gravity="center_vertical">
 
-            <TextView
-                android:id="@+id/subTile"
-                style="@style/TextAppearance.AppCompat.Widget.ActionBar.Subtitle"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:textColor="@color/white"
-                android:visibility="gone" />
-        </LinearLayout>
+                <TextView
+                    android:id="@+id/title"
+                    style="@style/TextAppearance.AppCompat.Widget.ActionBar.Title"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/app_name"
+                    android:textColor="@color/white" />
+
+                <TextView
+                    android:id="@+id/subTile"
+                    style="@style/TextAppearance.AppCompat.Widget.ActionBar.Subtitle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/white"
+                    android:visibility="gone" />
+            </LinearLayout>
+
+        </FrameLayout>
+
     </android.support.v7.widget.Toolbar>
 </FrameLayout>
