@@ -60,4 +60,7 @@ dependencies {
     compile 'com.github.liuchenx:DribSearch:a1ef637bda'
     compile 'com.balysv.materialmenu:material-menu-toolbar:1.5.4'
     compile 'com.android.support:support-v4:23.1.1'
+    compile ('com.github.ozodrukh:CircularReveal:1.1.1@aar') {
+        transitive = true;
+    }
 }

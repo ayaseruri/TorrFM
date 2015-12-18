@@ -28,7 +28,7 @@
         android:minHeight="?attr/actionBarSize"
         android:fitsSystemWindows="true" >
 
-        <FrameLayout
+        <RelativeLayout
             android:layout_marginRight="16dp"
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize">
@@ -39,25 +39,26 @@
                 android:layout_height="match_parent"
                 android:paddingTop="18dp"
                 android:paddingBottom="18dp"
-                app:breadth="2"
-                app:search_color="#fff"/>
+                app:breadth="4"
+                app:search_color="#FFFFFF"/>
 
             <EditText
                 android:id="@+id/search_edit"
                 android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:layout_marginLeft="8dp"
+                android:layout_height="wrap_content"
                 android:layout_marginBottom="20dp"
-                android:layout_marginRight="30dp"
+                android:hint="输入关键字，进行搜索!"
+                android:textColorHint="@android:color/white"
+                android:layout_centerVertical="true"
+                android:gravity="bottom"
                 android:visibility="gone"
-                android:gravity="center_vertical"
-                android:background="@null"/>
+                android:background="#33FFFFFF"/>
 
             <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:layout_gravity="center_vertical">
+                android:layout_centerVertical="true">
 
                 <TextView
                     android:id="@+id/title"
@@ -76,7 +77,7 @@
                     android:visibility="gone" />
             </LinearLayout>
 
-        </FrameLayout>
+        </RelativeLayout>
 
     </android.support.v7.widget.Toolbar>
 </FrameLayout>

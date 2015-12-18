@@ -41,6 +41,7 @@ public class MainActivity extends AppCompatActivity {
 
     private List<Fragment> fragments;
     private MainFragment mainFragment;
+
     private SearchFragment searchFragment;
 
     private MaterialMenuDrawable materialMenu;
@@ -83,12 +84,7 @@ public class MainActivity extends AppCompatActivity {
                 if (MaterialMenuDrawable.IconState.BURGER == materialMenu.getIconState() && mainViewPager.getCurrentItem() == 0) {
                     mainFragment.openDrawer();
                 }else if(MaterialMenuDrawable.IconState.ARROW == materialMenu.getIconState() && mainViewPager.getCurrentItem() == 1){
-                    searchET.setVisibility(View.GONE);
-                    materialMenu.animateIconState(MaterialMenuDrawable.IconState.BURGER);
-                    searchView.changeSearch();
-                    mainViewPager.setCurrentItem(0);
-                    YoYo.with(Techniques.FadeInLeft).playOn(title);
-                    YoYo.with(Techniques.FadeInLeft).playOn(subTitle);
+                    restoreFromSearch();
                 }
             }
         });
@@ -98,11 +94,14 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClickSearch() {
                 mainViewPager.setCurrentItem(1);
-                searchET.setVisibility(View.VISIBLE);
                 searchView.changeLine();
                 materialMenu.animateIconState(MaterialMenuDrawable.IconState.ARROW);
                 YoYo.with(Techniques.FadeOutLeft).playOn(title);
                 YoYo.with(Techniques.FadeOutLeft).playOn(subTitle);
+                if(searchET.getVisibility() == View.GONE){
+                    searchET.setVisibility(View.VISIBLE);
+                }
+                YoYo.with(Techniques.FadeIn).playOn(searchET);
             }
         });
 
@@ -120,6 +119,8 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         });
+
+
     }
 
     public void setMainBg(final Bitmap bitmap){
@@ -154,17 +155,17 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void setTitle(final String titleStr, final String subTitleStr){
-        YoYo.with(Techniques.RotateOutUpLeft).duration(200).withListener(new AnimatorListenerAdapter() {
+        YoYo.with(Techniques.FadeOutLeft).withListener(new AnimatorListenerAdapter() {
             @Override
             public void onAnimationStart(Animator animation) {
                 if (subTitle.getVisibility() == View.GONE) {
                     subTitle.setVisibility(View.VISIBLE);
                 }
-                YoYo.with(Techniques.RotateOutUpLeft).duration(200).withListener(new AnimatorListenerAdapter() {
+                YoYo.with(Techniques.FadeOutLeft).withListener(new AnimatorListenerAdapter() {
                     @Override
                     public void onAnimationEnd(Animator animation) {
                         subTitle.setText(subTitleStr);
-                        YoYo.with(Techniques.RotateInDownLeft).playOn(subTitle);
+                        YoYo.with(Techniques.FadeInLeft).playOn(subTitle);
                     }
                 }).playOn(subTitle);
             }
@@ -172,7 +173,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onAnimationEnd(Animator animation) {
                 title.setText(titleStr);
-                YoYo.with(Techniques.RotateInDownLeft).playOn(title);
+                YoYo.with(Techniques.FadeInLeft).playOn(title);
             }
         }).playOn(title);
 
@@ -185,12 +186,27 @@ public class MainActivity extends AppCompatActivity {
         toolbar.setLayoutParams(lp);
     }
 
+    private void restoreFromSearch(){
+        materialMenu.animateIconState(MaterialMenuDrawable.IconState.BURGER);
+        searchView.changeSearch();
+        mainViewPager.setCurrentItem(0);
+        YoYo.with(Techniques.FadeInLeft).playOn(title);
+        YoYo.with(Techniques.FadeInLeft).playOn(subTitle);
+        YoYo.with(Techniques.FadeOut).withListener(new AnimatorListenerAdapter() {
+            @Override
+            public void onAnimationEnd(Animator animation) {
+                searchET.setVisibility(View.GONE);
+            }
+        }).playOn(searchET);
+    }
+
     @Override
     public void onBackPressed() {
         if(0 == mainViewPager.getCurrentItem()){
             super.onBackPressed();
         }else {
             mainViewPager.setCurrentItem(0);
+            restoreFromSearch();
         }
     }
 }
