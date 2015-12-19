@@ -20,6 +20,9 @@ public interface ApiService {
     @GET("/x/?rand")
     Observable<List<SongInfo>> getRandSong(@Query("hid") String hid);
 
+    @GET("/x/?search")
+    Observable<List<SongInfo>> searchMusic(@Query("key") String key);
+
     @GET
     Observable<OneSentenceInfo> getOneSentence(@Url String url);
 }

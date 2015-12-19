@@ -13,5 +13,7 @@
         android:layout_gravity="center"
         fresco:roundAsCircle="true"
         fresco:roundingBorderColor="#ebebeb"
-        fresco:roundingBorderWidth="4dp" />
+        fresco:roundingBorderWidth="4dp"
+        fresco:placeholderImage="@drawable/music_empty"
+        fresco:placeholderImageScaleType="centerCrop"/>
 </LinearLayout>

@@ -6,7 +6,7 @@
     android:layout_height="match_parent"
     android:clipToPadding="false">
 
-    <include layout="@layout/activity_main_content" />
+    <include layout="@layout/fragment_main_content" />
 
     <android.support.v7.widget.RecyclerView
         android:id="@+id/navigation_recycler"
