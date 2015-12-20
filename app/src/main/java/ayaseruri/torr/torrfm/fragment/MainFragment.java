@@ -5,6 +5,7 @@ import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.drawable.Animatable;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Environment;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
@@ -20,6 +21,7 @@ import android.webkit.MimeTypeMap;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.FrameLayout;
+import android.widget.LinearLayout;
 import android.widget.SeekBar;
 import android.widget.TextView;
 
@@ -46,8 +48,10 @@ import com.nineoldandroids.animation.Animator;
 import com.nineoldandroids.animation.AnimatorListenerAdapter;
 import com.squareup.okhttp.Request;
 import com.squareup.okhttp.Response;
+import com.squareup.okhttp.ResponseBody;
 
 import org.androidannotations.annotations.AfterViews;
+import org.androidannotations.annotations.App;
 import org.androidannotations.annotations.Click;
 import org.androidannotations.annotations.EFragment;
 import org.androidannotations.annotations.UiThread;
@@ -65,10 +69,12 @@ import ayaseruri.torr.torrfm.R;
 import ayaseruri.torr.torrfm.activity.MainActivity;
 import ayaseruri.torr.torrfm.adaptar.MusicContentAdaptar;
 import ayaseruri.torr.torrfm.adaptar.NavigationAdapar;
+import ayaseruri.torr.torrfm.controller.LrcController;
 import ayaseruri.torr.torrfm.controller.MusicController;
 import ayaseruri.torr.torrfm.db.DBHelper;
 import ayaseruri.torr.torrfm.db.SettingPrefs_;
 import ayaseruri.torr.torrfm.global.Constant;
+import ayaseruri.torr.torrfm.global.MApplication;
 import ayaseruri.torr.torrfm.model.LrcModel;
 import ayaseruri.torr.torrfm.model.MusicPlayModel;
 import ayaseruri.torr.torrfm.network.RetrofitClient;
@@ -76,6 +82,7 @@ import ayaseruri.torr.torrfm.objectholder.ChannelInfo;
 import ayaseruri.torr.torrfm.objectholder.SongInfo;
 import ayaseruri.torr.torrfm.utils.Util;
 import ayaseruri.torr.torrfm.view.FavouriteSongsDialog;
+import ayaseruri.torr.torrfm.view.LrcView;
 import ayaseruri.torr.torrfm.view.MCheckBox;
 import ayaseruri.torr.torrfm.view.MSeekBar;
 import cn.pedant.SweetAlert.SweetAlertDialog;
@@ -119,6 +126,10 @@ public class MainFragment extends Fragment implements MusicPlayModel.IMusicPlay
     MCheckBox musicLike;
     @ViewById(R.id.music_content_root)
     FrameLayout musicContentRoot;
+    @ViewById(R.id.music_content_view_pager_root)
+    LinearLayout viewPagerRoot;
+    @App
+    MApplication mApplication;
 
     @Pref
     SettingPrefs_ settingPrefs;
@@ -126,6 +137,8 @@ public class MainFragment extends Fragment implements MusicPlayModel.IMusicPlay
     private MusicPlayModel musicPlayModel;
     private MusicController musicController;
     private LrcModel mLrcModel;
+    private LrcController mLrcController;
+    private LrcView mLrcView;
     private SimpleDraweeView musicCover;
     private NotificationManager mNotifyMgr;
     private DBHelper dbHelper;
@@ -133,6 +146,11 @@ public class MainFragment extends Fragment implements MusicPlayModel.IMusicPlay
 
     @AfterViews
     void init() {
+        int extraPadding = 0;
+        extraPadding = ((Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) ? mApplication.getStatusBarHeight() : 0)
+                + viewPagerRoot.getPaddingTop();
+        viewPagerRoot.setPadding(0, extraPadding, 0, 0);
+
         dbHelper = DBHelper.getInstance(getActivity());
         initDrawer();
         mNotifyMgr = (NotificationManager) getActivity().getSystemService(Context.NOTIFICATION_SERVICE);
@@ -140,9 +158,6 @@ public class MainFragment extends Fragment implements MusicPlayModel.IMusicPlay
         musicPlayModel = new MusicPlayModel();
         musicPlayModel.addIMusicPlays(this);
         musicController = new MusicController(getActivity(), musicPlayModel);
-
-        mLrcModel = new LrcModel();
-        mLrcModel.addILrc(this);
 
         musicPorgress.setMax(100);
         musicPorgress.setProgress(0);
@@ -169,12 +184,18 @@ public class MainFragment extends Fragment implements MusicPlayModel.IMusicPlay
         View musicContentCover = layoutInflater.inflate(R.layout.music_content_cover, null);
         musicCover = (SimpleDraweeView) musicContentCover.findViewById(R.id.music_cover);
         View musicContentLrc = layoutInflater.inflate(R.layout.music_content_lrc, null);
+        mLrcView = (LrcView) musicContentLrc.findViewById(R.id.lrc);
         List<View> musicContent = new ArrayList<>();
         musicContent.add(musicContentCover);
         musicContent.add(musicContentLrc);
         MusicContentAdaptar musicContentAdaptar = new MusicContentAdaptar(musicContent);
         musicContentViewPager.setAdapter(musicContentAdaptar);
         pagerIndicator.setViewPager(musicContentViewPager);
+
+        mLrcModel = new LrcModel();
+        mLrcModel.addILrc(this);
+        mLrcController = new LrcController(mLrcModel);
+        mLrcView.setLrcModel(mLrcModel);
 
         musicPlayBtn.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
@@ -324,9 +345,9 @@ public class MainFragment extends Fragment implements MusicPlayModel.IMusicPlay
 
         musicCurrentTime.setText(Util.FormatMusicTime(musicPlayModel.getMusicTimeCurrent()));
         musicTotalTime.setText(Util.FormatMusicTime(musicPlayModel.getMusicTimeTotal()));
-        mLrcModel.setTimeCurrent(musicPlayModel.getMusicTimeCurrent());
-
         musicLike.justChangeCheckState(musicPlayModel.isLike());
+
+        mLrcController.setMusicTimeCurrent(musicPlayModel.getMusicTimeCurrent());
 
         if (null != currentInfo.getImg() && !musicCoverPre.equals(currentInfo.getImg())) {
             musicCoverPre = currentInfo.getImg();
@@ -375,7 +396,7 @@ public class MainFragment extends Fragment implements MusicPlayModel.IMusicPlay
             }else {
                 builder = ImageRequestBuilder.newBuilderWithSource(Uri.parse(currentInfo.getImg()));
             }
-            ImageRequest request = builder.build();
+            final ImageRequest request = builder.build();
             DataSource<CloseableReference<CloseableImage>> dataSource = imagePipeline.fetchDecodedImage(request, this);
             dataSource.subscribe(new BaseBitmapDataSubscriber() {
                 @Override
@@ -391,12 +412,36 @@ public class MainFragment extends Fragment implements MusicPlayModel.IMusicPlay
 
             ((MainActivity)getActivity()).setTitle(musicPlayModel.getMusicInfoCurrent().getTitle()
                     , musicPlayModel.getMusicInfoCurrent().getArtist_name());
+
+            //以下开始初始化歌词
+            RetrofitClient.apiService.getLrc("http://danmu.fm/x/?lrc/" + "23")
+                    .subscribeOn(Schedulers.from(Constant.executor))
+                    .observeOn(AndroidSchedulers.mainThread())
+                    .subscribe(new Action1<ResponseBody>() {
+                        @Override
+                        public void call(ResponseBody responseBody) {
+                            try {
+                                mLrcModel.setLrcInfos(Util.decodeLrc(responseBody.string()));
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                                SuperToast.create(getActivity()
+                                        , "歌词格式错误"
+                                        , SuperToast.Duration.LONG
+                                        , Style.getStyle(Style.RED, SuperToast.Animations.FADE)).show();
+                            }
+                        }
+                    }, new Action1<Throwable>() {
+                        @Override
+                        public void call(Throwable throwable) {
+                            SuperToast.create(getActivity()
+                                    , "歌词初始化失败"
+                                    , SuperToast.Duration.LONG
+                                    , Style.getStyle(Style.RED, SuperToast.Animations.FADE)).show();
+                        }
+                    });
         }
-    }
-
-    @Override
-    public void onMusicTimeCurrentChange(LrcModel lrcModel) {
-
     }
 
     @Override
@@ -420,11 +465,11 @@ public class MainFragment extends Fragment implements MusicPlayModel.IMusicPlay
         sweetAlertDialog.setConfirmClickListener(new SweetAlertDialog.OnSweetClickListener() {
             @Override
             public void onClick(SweetAlertDialog sweetAlertDialog) {
-                if(musicPlayModel.getMusicInfoCurrent().isDownload() && musicPlayModel.getMusicIndexCurrent() == postion){
+                if (musicPlayModel.getMusicInfoCurrent().isDownload() && musicPlayModel.getMusicIndexCurrent() == postion) {
                     boolean isAutoPlay = musicPlayModel.isMusicPlaying();
                     musicController.pause();
                     musicController.next();
-                    if(isAutoPlay){
+                    if (isAutoPlay) {
                         musicController.play();
                     }
                 }
@@ -432,6 +477,12 @@ public class MainFragment extends Fragment implements MusicPlayModel.IMusicPlay
             }
         });
         sweetAlertDialog.setCancelText("取消");
+    }
+
+    @Override
+    @UiThread
+    public void onLrcUpdate(LrcModel lrcModel) {
+        mLrcView.invalidate();
     }
 
     void downloadMusic(final String savePath) {
@@ -735,6 +786,10 @@ public class MainFragment extends Fragment implements MusicPlayModel.IMusicPlay
 
     public void openDrawer(){
         mainDrawer.openDrawer(Gravity.LEFT);
+    }
+
+    public void onSearchItemClick(List<SongInfo> songInfos){
+        onFavouriteSongsItemClick(songInfos, 0);
     }
 }
 

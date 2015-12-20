@@ -1,5 +1,6 @@
 package ayaseruri.torr.torrfm.activity;
 
+import android.animation.ValueAnimator;
 import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.support.v4.app.Fragment;
@@ -7,6 +8,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.animation.AccelerateInterpolator;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
 import android.widget.EditText;
@@ -17,15 +19,20 @@ import com.balysv.materialmenu.MaterialMenuDrawable;
 import com.commit451.nativestackblur.NativeStackBlur;
 import com.daimajia.androidanimations.library.Techniques;
 import com.daimajia.androidanimations.library.YoYo;
+import com.eftimoff.viewpagertransformers.DepthPageTransformer;
+import com.github.johnpersano.supertoasts.SuperToast;
+import com.github.johnpersano.supertoasts.util.Style;
 import com.nineoldandroids.animation.Animator;
 import com.nineoldandroids.animation.AnimatorListenerAdapter;
 
 import org.androidannotations.annotations.AfterViews;
+import org.androidannotations.annotations.App;
+import org.androidannotations.annotations.Click;
 import org.androidannotations.annotations.EActivity;
 import org.androidannotations.annotations.ViewById;
-import org.liuyichen.dribsearch.DribSearchView;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import ayaseruri.torr.torrfm.R;
@@ -34,10 +41,14 @@ import ayaseruri.torr.torrfm.fragment.MainFragment;
 import ayaseruri.torr.torrfm.fragment.MainFragment_;
 import ayaseruri.torr.torrfm.fragment.SearchFragment;
 import ayaseruri.torr.torrfm.fragment.SearchFragment_;
+import ayaseruri.torr.torrfm.global.MApplication;
+import ayaseruri.torr.torrfm.objectholder.SongInfo;
 import ayaseruri.torr.torrfm.view.MViewPager;
 
 @EActivity(R.layout.activity_main)
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity{
+
+    private final static long switchPagerDuration = 300;
 
     private List<Fragment> fragments;
     private MainFragment mainFragment;
@@ -56,10 +67,10 @@ public class MainActivity extends AppCompatActivity {
     TextView title;
     @ViewById(R.id.subTile)
     TextView subTitle;
-    @ViewById(R.id.searchView)
-    DribSearchView searchView;
     @ViewById(R.id.search_edit)
     EditText searchET;
+    @App
+    MApplication mApplication;
 
     @AfterViews
     void init(){
@@ -73,7 +84,9 @@ public class MainActivity extends AppCompatActivity {
         fragments.add(mainFragment);
         fragments.add(searchFragment);
 
+//        mainViewPager.setPadding(0, 0, 0, mApplication.getNavigationBarHeight());
         MainViewPagerAdaptar mainViewPagerAdaptar = new MainViewPagerAdaptar(getSupportFragmentManager(), fragments);
+        mainViewPager.setPageTransformer(true, new DepthPageTransformer());
         mainViewPager.setAdapter(mainViewPagerAdaptar);
 
         materialMenu = new MaterialMenuDrawable(this, Color.WHITE, MaterialMenuDrawable.Stroke.EXTRA_THIN);
@@ -83,44 +96,98 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View v) {
                 if (MaterialMenuDrawable.IconState.BURGER == materialMenu.getIconState() && mainViewPager.getCurrentItem() == 0) {
                     mainFragment.openDrawer();
-                }else if(MaterialMenuDrawable.IconState.ARROW == materialMenu.getIconState() && mainViewPager.getCurrentItem() == 1){
+                } else if (MaterialMenuDrawable.IconState.ARROW == materialMenu.getIconState() && mainViewPager.getCurrentItem() == 1) {
                     restoreFromSearch();
                 }
             }
         });
+    }
 
-
-        searchView.setOnClickSearchListener(new DribSearchView.OnClickSearchListener() {
-            @Override
-            public void onClickSearch() {
-                mainViewPager.setCurrentItem(1);
-                searchView.changeLine();
-                materialMenu.animateIconState(MaterialMenuDrawable.IconState.ARROW);
-                YoYo.with(Techniques.FadeOutLeft).playOn(title);
-                YoYo.with(Techniques.FadeOutLeft).playOn(subTitle);
-                if(searchET.getVisibility() == View.GONE){
-                    searchET.setVisibility(View.VISIBLE);
-                }
-                YoYo.with(Techniques.FadeIn).playOn(searchET);
+    @Click(R.id.search_icon)
+    void onSearch(){
+        if(0 == mainViewPager.getCurrentItem()){
+            switchPager(true, switchPagerDuration);
+            materialMenu.animateIconState(MaterialMenuDrawable.IconState.ARROW);
+            YoYo.with(Techniques.FadeOutLeft).duration(switchPagerDuration).playOn(title);
+            YoYo.with(Techniques.FadeOutLeft).duration(switchPagerDuration).playOn(subTitle);
+            if (searchET.getVisibility() == View.GONE) {
+                searchET.setVisibility(View.VISIBLE);
             }
-        });
-
-        searchView.setOnChangeListener(new DribSearchView.OnChangeListener() {
-            @Override
-            public void onChange(DribSearchView.State state) {
-                switch (state) {
-                    case LINE:
-                        searchET.setFocusable(true);
-                        searchET.setFocusableInTouchMode(true);
-                        searchET.requestFocus();
-                        break;
-                    case SEARCH:
-                        break;
+            YoYo.with(Techniques.FadeIn).duration(switchPagerDuration).withListener(new AnimatorListenerAdapter() {
+                @Override
+                public void onAnimationEnd(Animator animation) {
+                    searchET.setFocusable(true);
+                    searchET.setFocusableInTouchMode(true);
+                    searchET.requestFocus();
                 }
+            }).playOn(searchET);
+        }else {
+            if("".equals(searchET.getText().toString())){
+                YoYo.with(Techniques.Shake).playOn(searchET);
+                SuperToast.create(this
+                        , "搜索文字不能为空"
+                        , SuperToast.Duration.LONG
+                        , Style.getStyle(Style.RED
+                        , SuperToast.Animations.FADE)).show();
+            }else {
+                searchFragment.search(searchET.getText().toString(), true);
             }
-        });
+        }
+    }
 
+    private void restoreFromSearch(){
+        materialMenu.animateIconState(MaterialMenuDrawable.IconState.BURGER);
+        switchPager(false, switchPagerDuration);
+        YoYo.with(Techniques.FadeInLeft).duration(switchPagerDuration).playOn(title);
+        YoYo.with(Techniques.FadeInLeft).duration(switchPagerDuration).playOn(subTitle);
+        YoYo.with(Techniques.FadeOut).duration(switchPagerDuration).withListener(new AnimatorListenerAdapter() {
+            @Override
+            public void onAnimationEnd(Animator animation) {
+                searchET.setVisibility(View.GONE);
+            }
+        }).playOn(searchET);
+    }
 
+    private void switchPager(final boolean forward, long duration){
+        if((0 == mainViewPager.getCurrentItem() && forward) || (1 == mainViewPager.getCurrentItem() && !forward)){
+            ValueAnimator animator = ValueAnimator.ofInt(0, mainViewPager.getWidth());
+            animator.addListener(new android.animation.Animator.AnimatorListener() {
+                @Override
+                public void onAnimationStart(android.animation.Animator animation) {
+
+                }
+
+                @Override
+                public void onAnimationEnd(android.animation.Animator animation) {
+                    mainViewPager.endFakeDrag();
+                }
+
+                @Override
+                public void onAnimationCancel(android.animation.Animator animation) {
+                    mainViewPager.endFakeDrag();
+                }
+
+                @Override
+                public void onAnimationRepeat(android.animation.Animator animation) {
+
+                }
+            });
+            animator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
+                private int oldDragPosition = 0;
+
+                @Override
+                public void onAnimationUpdate(ValueAnimator animation) {
+                    int dragPosition = (Integer) animation.getAnimatedValue();
+                    int dragOffset = dragPosition - oldDragPosition;
+                    oldDragPosition = dragPosition;
+                    mainViewPager.fakeDragBy(dragOffset * (forward ? -1 : 1));
+                }
+            });
+            animator.setInterpolator(new AccelerateInterpolator());
+            animator.setDuration(duration);
+            mainViewPager.beginFakeDrag();
+            animator.start();
+        }
     }
 
     public void setMainBg(final Bitmap bitmap){
@@ -182,22 +249,13 @@ public class MainActivity extends AppCompatActivity {
     public void hideToolBar(float precentage){
         int height = toolbar.getHeight();
         ViewGroup.MarginLayoutParams lp = (ViewGroup.MarginLayoutParams)toolbar.getLayoutParams();
-        lp.setMargins(0, (int)(-1 * height * precentage), 0, (int)(height * precentage));
+        lp.setMargins(0, (int) (-1 * height * precentage), 0, (int) (height * precentage));
         toolbar.setLayoutParams(lp);
     }
 
-    private void restoreFromSearch(){
-        materialMenu.animateIconState(MaterialMenuDrawable.IconState.BURGER);
-        searchView.changeSearch();
-        mainViewPager.setCurrentItem(0);
-        YoYo.with(Techniques.FadeInLeft).playOn(title);
-        YoYo.with(Techniques.FadeInLeft).playOn(subTitle);
-        YoYo.with(Techniques.FadeOut).withListener(new AnimatorListenerAdapter() {
-            @Override
-            public void onAnimationEnd(Animator animation) {
-                searchET.setVisibility(View.GONE);
-            }
-        }).playOn(searchET);
+    public void onSearchItemClick(SongInfo songInfo){
+        restoreFromSearch();
+        mainFragment.onSearchItemClick(Arrays.asList(songInfo));
     }
 
     @Override
@@ -205,7 +263,6 @@ public class MainActivity extends AppCompatActivity {
         if(0 == mainViewPager.getCurrentItem()){
             super.onBackPressed();
         }else {
-            mainViewPager.setCurrentItem(0);
             restoreFromSearch();
         }
     }

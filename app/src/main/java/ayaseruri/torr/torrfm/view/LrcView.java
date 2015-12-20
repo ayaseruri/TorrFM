@@ -7,9 +7,11 @@ import android.graphics.Paint;
 import android.util.AttributeSet;
 import android.widget.TextView;
 
-import java.util.List;
+import java.util.ArrayList;
 
 import ayaseruri.torr.torrfm.R;
+import ayaseruri.torr.torrfm.model.LrcModel;
+import ayaseruri.torr.torrfm.objectholder.LrcInfo;
 
 /**
  * Created by ayaseruri on 15/12/13.
@@ -18,9 +20,9 @@ public class LrcView extends TextView {
 
     private Paint currentPaint;
     private Paint notCurrentPaint;
-    private int crrentIndex, currentColor, noCurrentColor;
+    private int currentColor, noCurrentColor;
     private float currentSize, noCurrentSize, lineSpace;
-    private List<String> lrcs;
+    private LrcModel lrcModel;
 
     public LrcView(Context context) {
         super(context);
@@ -37,8 +39,6 @@ public class LrcView extends TextView {
         noCurrentSize = array.getDimension(R.styleable.LrcView_noCurrentSize, 12.0f);
         lineSpace = array.getDimension(R.styleable.LrcView_lineSpace, 12.0f);
         array.recycle();
-
-        crrentIndex = 0;
 
         currentPaint = new Paint();
         currentPaint.setAntiAlias(true);
@@ -57,25 +57,26 @@ public class LrcView extends TextView {
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
 
+        ArrayList<LrcInfo> lrcs = lrcModel.getLrcInfos();
         if (null != lrcs && lrcs.size() > 0) {
             float centerVertical = getHeight() / 2;
             float baseLineY = centerVertical - currentSize / 2 - lineSpace;
-            for (int i = crrentIndex - 1; i >= 0; i--) {
-                canvas.drawText(lrcs.get(i), getWidth() / 2
+            for (int i = lrcModel.getIndexCurrent() - 1; i >= 0; i--) {
+                canvas.drawText(lrcs.get(i).getJp(), getWidth() / 2
                         , baseLineY, notCurrentPaint);
-                baseLineY = centerVertical - noCurrentSize / 2 - lineSpace;
+                baseLineY = baseLineY - noCurrentSize - lineSpace;
                 if (baseLineY < 0) {
                     break;
                 }
             }
-            canvas.drawText(lrcs.get(crrentIndex), getWidth() / 2
+            canvas.drawText(lrcs.get(lrcModel.getIndexCurrent()).getJp(), getWidth() / 2
                     , centerVertical + currentSize / 2, currentPaint);
 
             baseLineY = centerVertical + currentSize / 2 + lineSpace + noCurrentSize;
-            for (int i = crrentIndex + 1; i < lrcs.size(); i++) {
-                canvas.drawText(lrcs.get(i), getWidth() / 2
+            for (int i = lrcModel.getIndexCurrent() + 1; i < lrcs.size(); i++) {
+                canvas.drawText(lrcs.get(i).getJp(), getWidth() / 2
                         , baseLineY, notCurrentPaint);
-                baseLineY = centerVertical - noCurrentSize / 2 - lineSpace;
+                baseLineY = baseLineY + noCurrentSize + lineSpace;
                 if (baseLineY > getHeight()) {
                     break;
                 }
@@ -83,11 +84,7 @@ public class LrcView extends TextView {
         }
     }
 
-    public void setCurrentIndex(int index) {
-        this.crrentIndex = index;
-    }
-
-    public void setLrcs(List<String> lrcs) {
-        this.lrcs = lrcs;
+    public void setLrcModel(LrcModel lrcModel) {
+        this.lrcModel = lrcModel;
     }
 }

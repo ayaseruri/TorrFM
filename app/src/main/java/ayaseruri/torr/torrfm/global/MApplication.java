@@ -1,6 +1,7 @@
 package ayaseruri.torr.torrfm.global;
 
 import android.app.Application;
+import android.content.res.Resources;
 
 import com.facebook.drawee.backends.pipeline.Fresco;
 import com.facebook.imagepipeline.backends.okhttp.OkHttpImagePipelineConfigFactory;
@@ -24,5 +25,22 @@ public class MApplication extends Application {
                 .build();
         Fresco.initialize(this, config);
         LocalDisplay.init(this);
+    }
+
+    public int getStatusBarHeight() {
+        return getBarHeight("status_bar_height");
+    }
+
+    public int getNavigationBarHeight(){
+        return getBarHeight("navigation_bar_height");
+    }
+
+    private int getBarHeight(String resourcesName){
+        Resources resources = this.getResources();
+        int resourceId = resources.getIdentifier(resourcesName, "dimen", "android");
+        if (resourceId > 0) {
+            return resources.getDimensionPixelSize(resourceId);
+        }
+        return 0;
     }
 }

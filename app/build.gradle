@@ -57,10 +57,12 @@ dependencies {
     compile 'com.j256.ormlite:ormlite-android:4.48'
     compile 'com.j256.ormlite:ormlite-core:4.48'
     compile 'com.github.zzz40500:AndroidSweetSheet:1.1.0'
-    compile 'com.github.liuchenx:DribSearch:a1ef637bda'
     compile 'com.balysv.materialmenu:material-menu-toolbar:1.5.4'
     compile 'com.android.support:support-v4:23.1.1'
     compile ('com.github.ozodrukh:CircularReveal:1.1.1@aar') {
         transitive = true;
     }
+    compile 'com.eftimoff:android-viewpager-transformers:1.0.1@aar'
+//    compile 'com.github.MustafaFerhan:DebugLog:v1.0'
+
 }

@@ -1,8 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_height="match_parent"
-    android:layout_width="match_parent"
-    xmlns:app="http://schemas.android.com/apk/res-auto">
+    android:layout_width="match_parent">
 
     <ImageView
         android:id="@+id/bg"
@@ -18,7 +17,7 @@
     <ayaseruri.torr.torrfm.view.MViewPager
         android:id="@+id/main_view_pager"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"/>
+        android:layout_height="match_parent" />
 
     <android.support.v7.widget.Toolbar
         android:id="@+id/toolbar"
@@ -33,21 +32,22 @@
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize">
 
-            <org.liuyichen.dribsearch.DribSearchView
-                android:id="@+id/searchView"
-                android:layout_width="match_parent"
+            <ImageView
+                android:id="@+id/search_icon"
+                android:layout_width="?attr/actionBarSize"
                 android:layout_height="match_parent"
-                android:paddingTop="18dp"
-                android:paddingBottom="18dp"
-                app:breadth="4"
-                app:search_color="#FFFFFF"/>
+                android:src="@drawable/search_icon"
+                android:padding="15dp"
+                android:layout_alignParentRight="true"/>
 
             <EditText
                 android:id="@+id/search_edit"
+                android:layout_toLeftOf="@+id/search_icon"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="20dp"
                 android:hint="输入关键字，进行搜索!"
+                android:textColor="@android:color/white"
                 android:textColorHint="@android:color/white"
                 android:layout_centerVertical="true"
                 android:gravity="bottom"
@@ -55,10 +55,13 @@
                 android:background="#33FFFFFF"/>
 
             <LinearLayout
+                android:id="@+id/title_root"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:layout_centerVertical="true">
+                android:layout_centerVertical="true"
+                android:layout_alignParentLeft="true"
+                android:layout_toLeftOf="@+id/search_icon">
 
                 <TextView
                     android:id="@+id/title"
@@ -66,6 +69,8 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="@string/app_name"
+                    android:maxLines="1"
+                    android:ellipsize="marquee"
                     android:textColor="@color/white" />
 
                 <TextView
@@ -74,10 +79,13 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:textColor="@color/white"
+                    android:maxLines="1"
+                    android:ellipsize="end"
                     android:visibility="gone" />
             </LinearLayout>
 
         </RelativeLayout>
 
     </android.support.v7.widget.Toolbar>
+
 </FrameLayout>

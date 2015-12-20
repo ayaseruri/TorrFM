@@ -6,6 +6,7 @@
     android:orientation="vertical">
 
     <ayaseruri.torr.torrfm.view.LrcView
+        android:id="@+id/lrc"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         lrcView:currentColor="@color/colorPrimary"
