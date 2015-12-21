@@ -1,5 +1,6 @@
 package ayaseruri.torr.torrfm.view;
 
+import android.animation.ValueAnimator;
 import android.content.Context;
 import android.content.res.TypedArray;
 import android.graphics.Canvas;
@@ -23,6 +24,7 @@ public class LrcView extends TextView {
     private int currentColor, noCurrentColor;
     private float currentSize, noCurrentSize, lineSpace;
     private LrcModel lrcModel;
+    private ValueAnimator valueAnimator;
 
     public LrcView(Context context) {
         super(context);

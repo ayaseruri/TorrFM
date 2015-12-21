@@ -1,17 +1,25 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:lrcView="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:orientation="vertical">
+    android:layout_height="match_parent">
+
+    <TextView
+        android:id="@+id/lrc_hint"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:text="正在加载歌词…"
+        android:gravity="center"
+        android:textColor="@android:color/white"
+        android:textSize="18sp"/>
 
     <ayaseruri.torr.torrfm.view.LrcView
         android:id="@+id/lrc"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         lrcView:currentColor="@color/colorPrimary"
-        lrcView:currentSize="16sp"
-        lrcView:lineSpace="8dp"
+        lrcView:currentSize="18sp"
+        lrcView:lineSpace="10dp"
         lrcView:noCurrentColor="#ebebeb"
-        lrcView:noCurrentSize="12sp" />
-</LinearLayout>
+        lrcView:noCurrentSize="16sp" />
+</FrameLayout>

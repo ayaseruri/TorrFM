@@ -5,12 +5,33 @@
     android:layout_height="match_parent"
     tools:context="ayaseruri.torr.torrfm.activity.StartActivity">
 
-    <com.mattkula.secrettextview.SecretTextView
-        android:id="@+id/textview"
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:layout_centerHorizontal="true"
+        android:orientation="vertical"
+        android:gravity="center">
+        <ImageView
+            android:id="@+id/logo"
+            android:layout_width="200dp"
+            android:layout_height="200dp"
+            android:paddingBottom="100dp"
+            android:src="@drawable/icon"
+            android:scaleType="centerCrop"/>
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="TorrFM"
+            android:textSize="56sp"
+            android:layout_marginBottom="100dp" />
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/one_sentence"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_centerInParent="true"
-        android:text="这是一段中文的测试"
-        android:textColor="@android:color/black"
-        android:textSize="30sp" />
+        android:layout_marginBottom="100dp"
+        android:layout_centerHorizontal="true"
+        android:layout_alignParentBottom="true"
+        android:textColor="#55FFFFFF"/>
 </RelativeLayout>

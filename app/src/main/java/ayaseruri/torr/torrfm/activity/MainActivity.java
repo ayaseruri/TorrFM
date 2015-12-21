@@ -3,6 +3,7 @@ package ayaseruri.torr.torrfm.activity;
 import android.animation.ValueAnimator;
 import android.graphics.Bitmap;
 import android.graphics.Color;
+import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
@@ -24,6 +25,7 @@ import com.github.johnpersano.supertoasts.SuperToast;
 import com.github.johnpersano.supertoasts.util.Style;
 import com.nineoldandroids.animation.Animator;
 import com.nineoldandroids.animation.AnimatorListenerAdapter;
+import com.xiaomi.market.sdk.XiaomiUpdateAgent;
 
 import org.androidannotations.annotations.AfterViews;
 import org.androidannotations.annotations.App;
@@ -71,6 +73,12 @@ public class MainActivity extends AppCompatActivity{
     EditText searchET;
     @App
     MApplication mApplication;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        XiaomiUpdateAgent.update(this);
+    }
 
     @AfterViews
     void init(){

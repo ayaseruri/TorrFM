@@ -1,6 +1,9 @@
 package ayaseruri.torr.torrfm.controller;
 
+import java.util.ArrayList;
+
 import ayaseruri.torr.torrfm.model.LrcModel;
+import ayaseruri.torr.torrfm.objectholder.LrcInfo;
 
 /**
  * Created by ayaseruri on 15/12/20.
@@ -25,5 +28,9 @@ public class LrcController {
                 }
             }
         }
+    }
+
+    public void reset(){
+        lrcModel.setLrcInfos(new ArrayList<LrcInfo>());
     }
 }

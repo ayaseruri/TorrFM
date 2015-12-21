@@ -139,6 +139,7 @@ public class MainFragment extends Fragment implements MusicPlayModel.IMusicPlay
     private LrcModel mLrcModel;
     private LrcController mLrcController;
     private LrcView mLrcView;
+    private TextView lrcHint;
     private SimpleDraweeView musicCover;
     private NotificationManager mNotifyMgr;
     private DBHelper dbHelper;
@@ -185,6 +186,7 @@ public class MainFragment extends Fragment implements MusicPlayModel.IMusicPlay
         musicCover = (SimpleDraweeView) musicContentCover.findViewById(R.id.music_cover);
         View musicContentLrc = layoutInflater.inflate(R.layout.music_content_lrc, null);
         mLrcView = (LrcView) musicContentLrc.findViewById(R.id.lrc);
+        lrcHint = (TextView)musicContentLrc.findViewById(R.id.lrc_hint);
         List<View> musicContent = new ArrayList<>();
         musicContent.add(musicContentCover);
         musicContent.add(musicContentLrc);
@@ -350,6 +352,7 @@ public class MainFragment extends Fragment implements MusicPlayModel.IMusicPlay
         mLrcController.setMusicTimeCurrent(musicPlayModel.getMusicTimeCurrent());
 
         if (null != currentInfo.getImg() && !musicCoverPre.equals(currentInfo.getImg())) {
+            mLrcController.reset();
             musicCoverPre = currentInfo.getImg();
             YoYo.with(Techniques.SlideOutUp).duration(200).withListener(new AnimatorListenerAdapter() {
                 @Override
@@ -414,12 +417,25 @@ public class MainFragment extends Fragment implements MusicPlayModel.IMusicPlay
                     , musicPlayModel.getMusicInfoCurrent().getArtist_name());
 
             //以下开始初始化歌词
-            RetrofitClient.apiService.getLrc("http://danmu.fm/x/?lrc/" + "23")
+            RetrofitClient.apiService.getLrc("http://danmu.fm/x/?lrc/" + currentInfo.getSid())
                     .subscribeOn(Schedulers.from(Constant.executor))
                     .observeOn(AndroidSchedulers.mainThread())
-                    .subscribe(new Action1<ResponseBody>() {
+                    .subscribe(new Subscriber<ResponseBody>() {
                         @Override
-                        public void call(ResponseBody responseBody) {
+                        public void onCompleted() {
+                            lrcHint.setVisibility(View.GONE);
+                        }
+
+                        @Override
+                        public void onError(Throwable e) {
+                            SuperToast.create(getActivity()
+                                    , "歌词初始化失败"
+                                    , SuperToast.Duration.LONG
+                                    , Style.getStyle(Style.RED, SuperToast.Animations.FADE)).show();
+                        }
+
+                        @Override
+                        public void onNext(ResponseBody responseBody) {
                             try {
                                 mLrcModel.setLrcInfos(Util.decodeLrc(responseBody.string()));
                             } catch (IOException e) {
@@ -432,13 +448,10 @@ public class MainFragment extends Fragment implements MusicPlayModel.IMusicPlay
                                         , Style.getStyle(Style.RED, SuperToast.Animations.FADE)).show();
                             }
                         }
-                    }, new Action1<Throwable>() {
+
                         @Override
-                        public void call(Throwable throwable) {
-                            SuperToast.create(getActivity()
-                                    , "歌词初始化失败"
-                                    , SuperToast.Duration.LONG
-                                    , Style.getStyle(Style.RED, SuperToast.Animations.FADE)).show();
+                        public void onStart() {
+                            lrcHint.setVisibility(View.VISIBLE);
                         }
                     });
         }
