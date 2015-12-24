@@ -7,9 +7,9 @@ TorrFM 是一个极简二次元弹幕（个人）电台，其网页版本在这�
 
 [Demo Apk](https://github.com/ayaseruri/TorrFM/raw/master/demo/app-debug.apk)
 
-![screen1](https://github.com/ayaseruri/TorrFM/raw/master/demo/screen1.png)
+![screen1](https://github.com/ayaseruri/TorrFM/raw/master/demo/Screenshot1.png)
 
-![screen2](https://github.com/ayaseruri/TorrFM/raw/master/demo/screen2.png)
+![screen2](https://github.com/ayaseruri/TorrFM/raw/master/demo/Screenshot2.png)
 
 (please wait while the screen.gif is litte big)
 
