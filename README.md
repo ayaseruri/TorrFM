@@ -13,7 +13,9 @@ TorrFM 是一个极简二次元弹幕（个人）电台，其网页版本在这�
 
 (please wait while the screen.gif is litte big)
 
-![screen](https://github.com/ayaseruri/TorrFM/raw/master/demo/screen.gif)
+![gif1](https://github.com/ayaseruri/TorrFM/raw/master/demo/screen1.gif)
+
+![gif2](https://github.com/ayaseruri/TorrFM/raw/master/demo/screen2.gif)
 
 
 # 自豪的站在以下巨人的肩膀上：
