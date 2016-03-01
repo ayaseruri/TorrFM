@@ -46,9 +46,6 @@ import com.j256.ormlite.dao.Dao;
 import com.j256.ormlite.stmt.DeleteBuilder;
 import com.nineoldandroids.animation.Animator;
 import com.nineoldandroids.animation.AnimatorListenerAdapter;
-import com.squareup.okhttp.Request;
-import com.squareup.okhttp.Response;
-import com.squareup.okhttp.ResponseBody;
 
 import org.androidannotations.annotations.AfterViews;
 import org.androidannotations.annotations.App;
@@ -82,11 +79,15 @@ import ayaseruri.torr.torrfm.objectholder.ChannelInfo;
 import ayaseruri.torr.torrfm.objectholder.SongInfo;
 import ayaseruri.torr.torrfm.utils.Util;
 import ayaseruri.torr.torrfm.view.FavouriteSongsDialog;
+import ayaseruri.torr.torrfm.view.LikeBtn;
 import ayaseruri.torr.torrfm.view.LrcView;
 import ayaseruri.torr.torrfm.view.MCheckBox;
 import ayaseruri.torr.torrfm.view.MSeekBar;
 import cn.pedant.SweetAlert.SweetAlertDialog;
 import me.relex.circleindicator.CircleIndicator;
+import okhttp3.Request;
+import okhttp3.Response;
+import okhttp3.ResponseBody;
 import okio.BufferedSink;
 import okio.BufferedSource;
 import okio.Okio;
@@ -112,6 +113,8 @@ public class MainFragment extends Fragment implements MusicPlayModel.IMusicPlay
     DrawerLayout mainDrawer;
     @ViewById(R.id.music_play)
     CheckBox musicPlayBtn;
+    @ViewById(R.id.like_btn)
+    LikeBtn likeBtn;
     @ViewById(R.id.music_current_time)
     TextView musicCurrentTime;
     @ViewById(R.id.music_total_time)
@@ -254,6 +257,13 @@ public class MainFragment extends Fragment implements MusicPlayModel.IMusicPlay
         });
 
         getRandSongList("1");
+
+        likeBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+
+            }
+        });
     }
 
     @Click(R.id.music_pre)

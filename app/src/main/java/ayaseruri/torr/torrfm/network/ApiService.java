@@ -1,15 +1,14 @@
 package ayaseruri.torr.torrfm.network;
 
-import com.squareup.okhttp.ResponseBody;
-
 import java.util.List;
 
 import ayaseruri.torr.torrfm.objectholder.ChannelInfo;
 import ayaseruri.torr.torrfm.objectholder.OneSentenceInfo;
 import ayaseruri.torr.torrfm.objectholder.SongInfo;
-import retrofit.http.GET;
-import retrofit.http.Query;
-import retrofit.http.Url;
+import okhttp3.ResponseBody;
+import retrofit2.http.GET;
+import retrofit2.http.Query;
+import retrofit2.http.Url;
 import rx.Observable;
 
 /**

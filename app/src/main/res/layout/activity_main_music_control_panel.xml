@@ -120,7 +120,13 @@
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:background="@drawable/music_play_selector"
-                android:button="@null" />
+                android:button="@null"
+                android:visibility="gone"/>
+
+            <ayaseruri.torr.torrfm.view.LikeBtn_
+                android:id="@+id/like_btn"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"/>
         </LinearLayout>
 
         <ImageView

@@ -4,7 +4,6 @@ import android.app.Application;
 import android.content.res.Resources;
 
 import com.facebook.drawee.backends.pipeline.Fresco;
-import com.facebook.imagepipeline.backends.okhttp.OkHttpImagePipelineConfigFactory;
 import com.facebook.imagepipeline.core.ImagePipelineConfig;
 
 import org.androidannotations.annotations.EApplication;
@@ -20,10 +19,7 @@ public class MApplication extends Application {
     @Override
     public void onCreate() {
         super.onCreate();
-        ImagePipelineConfig config = OkHttpImagePipelineConfigFactory
-                .newBuilder(this, RetrofitClient.okHttpClient)
-                .build();
-        Fresco.initialize(this, config);
+        Fresco.initialize(this);
         LocalDisplay.init(this);
     }
 
